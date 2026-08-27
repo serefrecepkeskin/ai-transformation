@@ -1,0 +1,20 @@
+# Copilot coding agent'ın geçici ortamını çalışmaya başlamadan önce hazırlar:
+# burada kurulan bağımlılıklar her agent koşusunda hazır olur.
+# Default branch'e merge et; Actions sekmesinden test et (workflow_dispatch).
+name: "Copilot Setup Steps"
+
+on: workflow_dispatch
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5 # TODO(confirm): uv / poetry / pip
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12" # TODO(confirm): deponun gerçek sürümü
+      - run: uv sync --dev # TODO(confirm): deponun gerçek kurulum komutu

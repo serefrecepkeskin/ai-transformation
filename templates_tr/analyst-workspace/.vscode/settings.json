@@ -1,0 +1,11 @@
+{
+  // Yalnız güvenli okuma komutlarına otomatik onay; gerisi sorar.
+  // Bilinçli olarak AYARLANMADI: "chat.tools.autoApprove" (global) — güvenlik
+  // mekanizmasını tamamen kapatır.
+  "chat.tools.terminal.autoApprove": {
+    "/^git (status|diff|log|show|branch)\\b/": true,
+    "/^rm -rf\\b/": false,
+    "/^git push --force/": false,
+    "/^git reset --hard/": false
+  }
+}

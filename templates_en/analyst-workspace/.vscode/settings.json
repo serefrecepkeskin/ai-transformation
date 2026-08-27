@@ -1,0 +1,11 @@
+{
+  // Auto-approve only safe read commands; everything else asks. false = ask/deny.
+  // Deliberately NOT set: "chat.tools.autoApprove" (global) — it disables the
+  // safety mechanism entirely.
+  "chat.tools.terminal.autoApprove": {
+    "/^git (status|diff|log|show|branch)\\b/": true,
+    "/^rm -rf\\b/": false,
+    "/^git push --force/": false,
+    "/^git reset --hard/": false
+  }
+}

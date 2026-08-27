@@ -1,0 +1,16 @@
+{
+  // Copilot agent mode için güvenli, salt-okunur ve dev-döngüsü komutlarına
+  // otomatik onay — onay yorgunluğunu azaltır. false = her zaman sor.
+  // Bilinçli olarak AYARLANMADI: "chat.tools.autoApprove" (global) — güvenlik
+  // mekanizmasını tamamen kapatır. Anahtarlar düz metin veya /regex/ olabilir.
+  "chat.tools.terminal.autoApprove": {
+    "/^git (status|diff|log|show|branch)\\b/": true,
+    "git add": true,
+    "/^uv run (ruff|mypy|pytest)\\b/": true,
+    "/^(ruff|mypy|pytest)\\b/": true,
+    "uv sync": true,
+    "/^rm -rf\\b/": false,
+    "/^git push --force/": false,
+    "/^git reset --hard/": false
+  }
+}

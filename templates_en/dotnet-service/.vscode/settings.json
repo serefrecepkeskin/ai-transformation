@@ -1,0 +1,15 @@
+{
+  // Auto-approve safe, read-only and dev-loop terminal commands for Copilot
+  // agent mode to cut approval-prompt noise. false = always ask.
+  // Deliberately NOT set: "chat.tools.autoApprove" (global) — it disables the
+  // safety mechanism entirely. Keys support exact strings or /regex/.
+  "chat.tools.terminal.autoApprove": {
+    "/^git (status|diff|log|show|branch)\\b/": true,
+    "git add": true,
+    "/^dotnet (build|test|restore|format)\\b/": true,
+    "/^rm -rf\\b/": false,
+    "/^git push --force/": false,
+    "/^git reset --hard/": false,
+    "/^dotnet ef database update/": false
+  }
+}

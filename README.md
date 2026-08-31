@@ -15,19 +15,13 @@ yerde yaşar:
 
 ## Şablonlar
 
-Dört şablon, tek dil: **`templates_en/`**. Paralel bir Türkçe sürüm vardı ve
+Üç şablon, tek dil: **`templates_en/`**. Paralel bir Türkçe sürüm vardı ve
 kaldırıldı — aynı şablonların ikiz kopyası, senkron tutulacak dosya sayısını
 ikiye katlayıp netlik değil drift üretiyordu.
 
 - `templates_en/frontend-web/` — UI / frontend projeleri (Next.js, React ve benzeri)
 - `templates_en/python-service/` — Python servisleri ve API'ler
-- `templates_en/dotnet-service/` — .NET servisleri ve API'ler
 - `templates_en/analyst-workspace/` — iş analistleri: DB araştırması + görev yazımı
-
-Dolu bir örnek `examples/python-service-example/` altındadır (Türkçe):
-Python şablonunun, kurgusal bir sipariş servisi üzerinde `bootstrap-research`
-**çalıştıktan sonraki** hali — kod yok, yalnız tamamlanmış dokümanlar. Ekibe
-"bitmiş hal neye benziyor" göstermek için kullanın.
 
 ## Bir şablon nasıl benimsenir
 

@@ -14,19 +14,13 @@ Everything an agent needs lives in three places Copilot reads **natively**:
 
 ## Templates
 
-Four templates, one language: **`templates_en/`**. A parallel Turkish edition
+Three templates, one language: **`templates_en/`**. A parallel Turkish edition
 existed and was removed — twin copies of the same templates doubled what had to
 be kept in sync and produced drift, not clarity.
 
 - `templates_en/frontend-web/` — UI / frontend projects (Next.js, React and similar)
 - `templates_en/python-service/` — Python services and APIs
-- `templates_en/dotnet-service/` — .NET services and APIs
 - `templates_en/analyst-workspace/` — business analysts: DB research + task authoring
-
-A filled-in example lives in `examples/python-service-example/` (Turkish):
-the Python template as it looks **after** `bootstrap-research` ran on a
-fictional orders-service — no code, just the completed docs. Use it to show
-the team what "done" looks like.
 
 ## Working principles
 

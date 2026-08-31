@@ -40,10 +40,20 @@ input at the boundary. If a decision settles along the way, run
 
 ## 6. Gates + self-review
 
-Run `run-quality-gates`; optionally run `simplify` on the working diff (reuse/dead-weight cleanup), then `self-review`. Fix critical/medium findings.
+Run `run-quality-gates`, then `self-review`. Fix critical/medium findings.
+Simplification is not a cleanup pass here — it happened while writing, via the
+ladder in AGENTS.md rule #4.
 
 ## 7. PR
 
 Conventional-commit PR title. Description: what changed, how it was verified,
 what self-review found, which acceptance criteria are covered. Check off the
 task's DoD list.
+
+## 8. Update the feature state
+
+Final step: update [.ai/STATE.md](../../../.ai/STATE.md) — what is done (with
+its evidence), what is next, decisions still waiting on an ADR, and any
+`TODO(confirm)` handed to a human. Create the file from its own section
+skeleton if it is missing. It is deleted when the branch merges, so anything
+permanent goes to an ADR or `docs/` first.

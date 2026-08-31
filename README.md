@@ -15,24 +15,14 @@ yerde yaşar:
 
 ## Şablonlar
 
-Aynı dört şablonun iki dil sürümü. Yapısal olarak birebir aynılar — aynı
-klasörler, aynı dosya adları, aynı skill tanımlayıcıları — bir depo hangisini
-seçerse seçsin kurulum değişmez:
+Dört şablon, tek dil: **`templates_en/`**. Paralel bir Türkçe sürüm vardı ve
+kaldırıldı — aynı şablonların ikiz kopyası, senkron tutulacak dosya sayısını
+ikiye katlayıp netlik değil drift üretiyordu.
 
-- **`templates_en/`** — İngilizce sürüm
-- **`templates_tr/`** — Türkçe sürüm
-
-Ekibin gerçekten okuyup bakımını yapacağı sürümü seçin; ikisini tek depoda
-karıştırmak yalnızca drift üretir.
-
-- `<sürüm>/frontend-web/` — UI / frontend projeleri (Next.js, React ve benzeri)
-- `<sürüm>/python-service/` — Python servisleri ve API'ler
-- `<sürüm>/dotnet-service/` — .NET servisleri ve API'ler
-- `<sürüm>/analyst-workspace/` — iş analistleri: DB araştırması + görev yazımı
-
-Skill klasör adları ve her SKILL.md'deki `name:` alanı iki sürümde de
-İngilizce kalır (AGENTS.md'den referans verilen tanımlayıcılardır); yalnız
-düzyazı ve `description:` yerelleştirilmiştir.
+- `templates_en/frontend-web/` — UI / frontend projeleri (Next.js, React ve benzeri)
+- `templates_en/python-service/` — Python servisleri ve API'ler
+- `templates_en/dotnet-service/` — .NET servisleri ve API'ler
+- `templates_en/analyst-workspace/` — iş analistleri: DB araştırması + görev yazımı
 
 Dolu bir örnek `examples/python-service-example/` altındadır (Türkçe):
 Python şablonunun, kurgusal bir sipariş servisi üzerinde `bootstrap-research`
@@ -41,8 +31,7 @@ Python şablonunun, kurgusal bir sipariş servisi üzerinde `bootstrap-research`
 
 ## Bir şablon nasıl benimsenir
 
-1. `templates_en/<şablon>/` veya `templates_tr/<şablon>/` içeriğini hedef
-   deponun köküne kopyalayın.
+1. `templates_en/<şablon>/` içeriğini hedef deponun köküne kopyalayın.
 2. Depoyu Copilot ile açıp **`bootstrap-research`** skill'ini çalıştırın:
    gerçek kod tabanını (manifest'ler, CI, klasör yerleşimi) inceler ve `docs/`
    içindeki her `PLACEHOLDER` alanını kanıtla doldurur; emin olamadığını

@@ -11,6 +11,8 @@ Details live in `docs/` and are linked below; treat the linked doc as the
 source of truth. Keep this file and every doc **short** — everything loaded
 into context costs tokens on each request.
 
+<!-- STANDARD-CORE:BEGIN golden-rules v1.1.0 -->
+
 ## Golden Rules
 
 1. **Think before coding.** No silent assumptions. If the task, design intent or
@@ -20,8 +22,17 @@ into context costs tokens on each request.
    changes are verified with tests. See [testing.md](docs/engineering/testing.md).
 3. **Not done until the gates are green.** Run the `run-quality-gates` skill
    (typecheck, lint, format, tests) before any commit/PR.
-4. **Simplicity first, surgical changes.** Implement exactly what the task asks,
-   in the smallest reasonable diff. No tangential refactors, no extra features.
+4. **Simplicity first, surgical changes.** Implement exactly what the task
+   asks, in the smallest reasonable diff — no tangential refactors, no extra
+   features. Before writing anything new, climb this ladder and stop at the
+   first rung that answers: (1) does it need to exist at all? no → skip
+   (YAGNI); (2) does this codebase already do it? → reuse, don't rewrite;
+   (3) does the stdlib do it? → use it; (4) native platform feature? → use it;
+   (5) does an installed dependency do it? → use it; (6) fits in one line? →
+   one line; (7) only then write the minimum that works. The ladder starts
+   *after* the problem is understood — be lazy about the solution, never about
+   reading. Laziness never applies to validation, error handling, security or
+   accessibility.
 5. **Work from verifiable goals.** A task without acceptance criteria and a
    "how to test" section (see the task template) is not ready — ask for it.
 6. **Follow the conventions.** See [conventions.md](docs/engineering/conventions.md);
@@ -38,6 +49,8 @@ into context costs tokens on each request.
 11. **Keep docs short and current.** Update the relevant doc with the change that
     affects it; never paste long content where a link suffices.
 
+<!-- STANDARD-CORE:END golden-rules -->
+
 ## Commands
 
 PLACEHOLDER — bootstrap-research fills this from package.json scripts.
@@ -51,6 +64,7 @@ PLACEHOLDER — bootstrap-research fills this from package.json scripts.
 ### Engineering (how we build)
 
 - [architecture.md](docs/engineering/architecture.md)
+- [DESIGN.md](docs/DESIGN.md) — design system: tokens, components, do's/don'ts
 - [tech-stack.md](docs/engineering/tech-stack.md)
 - [conventions.md](docs/engineering/conventions.md)
 - [testing.md](docs/engineering/testing.md)
@@ -77,8 +91,9 @@ Numbered, immutable ADRs: `docs/decisions/` (see its README + index).
 - **skill `verify-ui`** — prove a UI change works in the browser (Playwright MCP).
 - **skill `new-component`** — create a component that follows the conventions.
 - **skill `run-quality-gates`** — typecheck + lint + format + tests, report results.
-- **skill `simplify`** — quality pass on the diff (reuse, dead weight) after it
-  works, before self-review.
+- **skill `impeccable`** — design quality: checks UI against
+  [DESIGN.md](docs/DESIGN.md); `/impeccable document` (re)generates it. Vendored
+  upstream, updated with `npx impeccable update` (ADR 0002).
 - **skill `record-decision`** — write an ADR + update the affected doc (rule #7).
 - **skill `self-review`** — `code-reviewer` agent audits the diff before push/PR.
 - **skill `commit-and-pr`** — commit/PR format: English conventional-commit title,
@@ -96,3 +111,7 @@ Work arrives as a `task.md` written by an analyst (see the analyst workspace's
 `task-template.md`): context, scope, measurable acceptance criteria, DoD,
 how-to-test, and data sources. If any of those are missing, request them via
 the task's author instead of guessing.
+
+A feature that spans more than one task keeps its cross-session state in
+[.ai/STATE.md](.ai/STATE.md): `implement-task` updates it as its final step,
+and it is deleted when the feature branch merges.

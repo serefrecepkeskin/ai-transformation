@@ -44,3 +44,12 @@ repo** — never from assumptions. Anything you cannot verify stays marked
 Summarize: which placeholders were filled, the list of `TODO(confirm)` items,
 and any code-vs-config contradictions found. Do not commit — leave the diff for
 the team to review.
+
+Then hand over the two things that close the adoption:
+
+- Delete the `> **TEMPLATE.**` blockquote at the top of `AGENTS.md` once the
+  placeholders around it are real.
+- Once the team has reviewed the diff, set `allowPlaceholders` to `false` in
+  `.github/standard-version.json`. That arms the PLACEHOLDER gate in
+  `standard-check.yml`: from then on a leftover placeholder fails the PR
+  instead of warning.

@@ -1,6 +1,6 @@
 # Development Workflow
 
-> The lifecycle of a change, from task to production. PLACEHOLDER items are
+> The lifecycle of a change, from task to production. Placeholder items are
 > filled by `bootstrap-research`; the flow itself is the company standard.
 
 ```

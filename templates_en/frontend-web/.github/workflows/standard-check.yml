@@ -1,0 +1,159 @@
+# Level-1 static checks for the AI-workflow standard: the things a machine can
+# verify about the agent setup itself (budgets, skill descriptions, links,
+# document freshness). Blocking on pull requests.
+#
+# Deliberately self-contained: plain shell, no external actions beyond checkout,
+# so the file works in any repo that adopts the template.
+name: "Standard Check"
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  standard-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Report the installed standard version
+        run: |
+          if [ -f .github/standard-version.json ]; then
+            cat .github/standard-version.json
+          else
+            echo "::warning::.github/standard-version.json is missing — the installed standard version is unknown"
+          fi
+
+      - name: Line budgets (AGENTS.md <=130, each SKILL.md <=60)
+        run: |
+          fail=0
+          if [ -f AGENTS.md ]; then
+            n=$(wc -l < AGENTS.md)
+            if [ "$n" -gt 130 ]; then
+              echo "::error file=AGENTS.md::AGENTS.md is $n lines (budget 130) — move detail into docs/"
+              fail=1
+            fi
+          else
+            echo "::error::AGENTS.md is missing"
+            fail=1
+          fi
+          for f in .github/skills/*/SKILL.md; do
+            [ -e "$f" ] || continue
+            case "$f" in */impeccable/*) continue ;; esac   # vendored upstream, not ours to budget
+            n=$(wc -l < "$f")
+            if [ "$n" -gt 60 ]; then
+              echo "::error file=$f::$f is $n lines (budget 60) — a skill is a recipe, not a manual"
+              fail=1
+            fi
+          done
+          exit $fail
+
+      # Copilot loads a skill by matching its description against the prompt,
+      # so the description must state a trigger, not just describe the skill.
+      # The rule is structural: one SENTENCE has to open with a trigger word
+      # ("Use when ...", "Run after ...", "Always run before ..."). Matching the
+      # word anywhere would pass a description that merely happens to contain
+      # "before", which is how this check ends up verifying nothing.
+      - name: Every skill description says when to use it
+        run: |
+          fail=0
+          triggers='(^|\. )(use|run|always run|after|before|when|whenever)[[:space:]]'
+          for f in .github/skills/*/SKILL.md; do
+            [ -e "$f" ] || continue
+            case "$f" in */impeccable/*) continue ;; esac
+            desc=$(awk '/^description:/{sub(/^description:[[:space:]]*/,""); print; exit}' "$f")
+            if [ -z "$desc" ]; then
+              echo "::error file=$f::no description: in the frontmatter — Copilot cannot decide when to load this skill"
+              fail=1
+            elif ! printf '%s' "$desc" | grep -qiE "$triggers"; then
+              echo "::error file=$f::description never says when to use this skill — add a trigger sentence (\"Use when ...\")"
+              fail=1
+            fi
+          done
+          exit $fail
+
+      - name: Overlapping trigger words between skills (report only)
+        run: |
+          table=$(mktemp)
+          for f in .github/skills/*/SKILL.md; do
+            [ -e "$f" ] || continue
+            case "$f" in */impeccable/*) continue ;; esac
+            name=$(basename "$(dirname "$f")")
+            awk -v n="$name" '/^description:/{sub(/^description:[[:space:]]*/,""); print n "\t" tolower($0); exit}' "$f"
+          done > "$table"
+          awk -F'\t' '
+            { name[NR] = $1; desc[NR] = $2 }
+            END {
+              stop = "^(skill|description|when|this|that|with|from|into|after|before|then|task|tasks|repo|code|codebase|file|files|change|changes|using|never|missing|which|their|there|other|every|about)$"
+              for (i = 1; i <= NR; i++) {
+                delete words
+                n1 = split(desc[i], a, /[^a-z]+/)
+                for (k = 1; k <= n1; k++) if (length(a[k]) >= 5 && a[k] !~ stop) words[a[k]] = 1
+                for (j = i + 1; j <= NR; j++) {
+                  count = 0; shared = ""; delete seen
+                  n2 = split(desc[j], b, /[^a-z]+/)
+                  for (k = 1; k <= n2; k++) {
+                    if (length(b[k]) >= 5 && (b[k] in words) && !(b[k] in seen)) {
+                      count++; seen[b[k]] = 1; shared = shared " " b[k]
+                    }
+                  }
+                  if (count >= 4) {
+                    printf "::warning::skills %s and %s share %d trigger words:%s — the wrong one may load\n", name[i], name[j], count, shared
+                  }
+                }
+              }
+            }' "$table"
+
+      - name: Relative links in AGENTS.md and docs/ resolve
+        run: |
+          broken=$(mktemp)
+          files="AGENTS.md"
+          [ -d docs ] && files="$files $(find docs -name '*.md')"
+          for file in $files; do
+            [ -e "$file" ] || continue
+            dir=$(dirname "$file")
+            grep -oE '\]\([^)]+\)' "$file" | sed -E 's/^\]\(//; s/\)$//' | while IFS= read -r link; do
+              link="${link%%#*}"
+              case "$link" in http://*|https://*|mailto:*|"") continue ;; esac
+              [ -e "$dir/$link" ] || echo "::error file=$file::broken relative link: $link" >> "$broken"
+            done
+          done
+          if [ -s "$broken" ]; then cat "$broken"; exit 1; fi
+
+      - name: Document freshness — PLACEHOLDER gate, TODO(confirm) report
+        run: |
+          scan="AGENTS.md"
+          [ -d docs ] && scan="$scan docs"
+          todos=$(grep -rn "TODO(confirm)" $scan 2>/dev/null | wc -l | tr -d ' ')
+          [ "$todos" -eq 0 ] || echo "::warning::$todos open TODO(confirm) item(s) — review them with the team and resolve or delete"
+          hits=$(grep -rn "PLACEHOLDER" $scan 2>/dev/null || true)
+          [ -n "$hits" ] || exit 0
+          count=$(printf '%s\n' "$hits" | wc -l | tr -d ' ')
+          if grep -q '"allowPlaceholders"[[:space:]]*:[[:space:]]*true' .github/standard-version.json 2>/dev/null; then
+            echo "::warning::$count PLACEHOLDER(s) still in the docs — allowed while adopting. Run bootstrap-research, then set allowPlaceholders to false in .github/standard-version.json to arm this gate."
+          else
+            printf '%s\n' "$hits"
+            echo "::error::$count PLACEHOLDER(s) left in AGENTS.md/docs — the knowledge base is not filled in"
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Design quality (ADR 0002). The detector is deterministic — no LLM, no
+      # API key — so it belongs in CI. It runs REPORT ONLY during the pilot:
+      # read the findings, tune the ignores, and make it blocking as a separate
+      # decision once the finding rate on this repo is known.
+      #
+      # Run it through the CLI, not the vendored copy under .github/skills/:
+      # the vendored payload ships no node_modules, so it falls back to regex
+      # matching and undercounts. The major version is pinned so a CI run stays
+      # reproducible; bump it deliberately.
+      - name: Impeccable design detector (report only)
+        continue-on-error: true
+        run: npx --yes impeccable@3 detect .

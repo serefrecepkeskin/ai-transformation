@@ -14,24 +14,14 @@ Everything an agent needs lives in three places Copilot reads **natively**:
 
 ## Templates
 
-Two language editions of the same four templates. They are structurally
-identical — same folders, same file names, same skill identifiers — so a repo
-can pick either without changing how anything is wired:
+Four templates, one language: **`templates_en/`**. A parallel Turkish edition
+existed and was removed — twin copies of the same templates doubled what had to
+be kept in sync and produced drift, not clarity.
 
-- **`templates_en/`** — English edition
-- **`templates_tr/`** — Turkish edition (Türkçe sürüm)
-
-Pick the edition your team will actually read and maintain; mixing the two in
-one repo only creates drift.
-
-- `<edition>/frontend-web/` — UI / frontend projects (Next.js, React and similar)
-- `<edition>/python-service/` — Python services and APIs
-- `<edition>/dotnet-service/` — .NET services and APIs
-- `<edition>/analyst-workspace/` — business analysts: DB research + task authoring
-
-Skill folder names and the `name:` field in each SKILL.md stay in English in
-both editions (they are identifiers referenced from `AGENTS.md`); only the
-prose and the `description:` are localized.
+- `templates_en/frontend-web/` — UI / frontend projects (Next.js, React and similar)
+- `templates_en/python-service/` — Python services and APIs
+- `templates_en/dotnet-service/` — .NET services and APIs
+- `templates_en/analyst-workspace/` — business analysts: DB research + task authoring
 
 A filled-in example lives in `examples/python-service-example/` (Turkish):
 the Python template as it looks **after** `bootstrap-research` ran on a
@@ -67,8 +57,7 @@ a code repo: it is where analysts research databases (read-only MCP) and produce
 
 ## How to adopt a template
 
-1. Copy the contents of `templates_en/<template>/` or `templates_tr/<template>/`
-   into the target repo root.
+1. Copy the contents of `templates_en/<template>/` into the target repo root.
 2. Open the repo with Copilot and run the **`bootstrap-research`** skill:
    it explores the actual codebase (manifests, CI, folder layout) and fills every
    `PLACEHOLDER` section in `docs/` with evidence, marking anything uncertain as

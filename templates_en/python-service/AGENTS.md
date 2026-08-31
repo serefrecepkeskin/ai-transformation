@@ -11,6 +11,8 @@ Details live in `docs/` and are linked below; treat the linked doc as the
 source of truth. Keep this file and every doc **short** — everything loaded
 into context costs tokens on each request.
 
+<!-- STANDARD-CORE:BEGIN golden-rules v1.1.0 -->
+
 ## Golden Rules
 
 1. **Think before coding.** No silent assumptions. If the task or a business
@@ -20,8 +22,17 @@ into context costs tokens on each request.
    See [testing.md](docs/engineering/testing.md).
 3. **Not done until the gates are green.** Run the `run-quality-gates` skill
    (lint, types, tests) before any commit/PR.
-4. **Simplicity first, surgical changes.** Implement exactly what the task asks,
-   in the smallest reasonable diff. No tangential refactors.
+4. **Simplicity first, surgical changes.** Implement exactly what the task
+   asks, in the smallest reasonable diff — no tangential refactors, no extra
+   features. Before writing anything new, climb this ladder and stop at the
+   first rung that answers: (1) does it need to exist at all? no → skip
+   (YAGNI); (2) does this codebase already do it? → reuse, don't rewrite;
+   (3) does the stdlib do it? → use it; (4) native platform feature? → use it;
+   (5) does an installed dependency do it? → use it; (6) fits in one line? →
+   one line; (7) only then write the minimum that works. The ladder starts
+   *after* the problem is understood — be lazy about the solution, never about
+   reading. Laziness never applies to validation, error handling, security or
+   accessibility.
 5. **Work from verifiable goals.** A task without acceptance criteria and a
    "how to test" section (see the task template) is not ready — ask for it.
 6. **Follow the conventions.** See [conventions.md](docs/engineering/conventions.md);
@@ -37,6 +48,8 @@ into context costs tokens on each request.
     [manual-actions.md](docs/engineering/manual-actions.md).
 11. **Schema changes only via migrations** — never edit the database or a
     generated migration by hand; use the `db-migration` skill.
+
+<!-- STANDARD-CORE:END golden-rules -->
 
 ## Commands
 
@@ -74,8 +87,6 @@ Numbered, immutable ADRs: `docs/decisions/` (see its README + index).
 - **skill `bootstrap-research`** — explore this codebase and fill the
   PLACEHOLDER sections in `docs/` with evidence.
 - **skill `run-quality-gates`** — lint + types + tests, report results.
-- **skill `simplify`** — quality pass on the diff (reuse, dead weight) after it
-  works, before self-review.
 - **skill `new-endpoint`** — add an API endpoint following the conventions.
 - **skill `db-migration`** — create/apply a schema migration safely.
 - **skill `record-decision`** — write an ADR + update the affected doc (rule #7).
@@ -95,3 +106,7 @@ Work arrives as a `task.md` written by an analyst (see the analyst workspace's
 `task-template.md`): context, scope, measurable acceptance criteria, DoD,
 how-to-test, and data sources (which DB/table/column). If any of those are
 missing, request them via the task's author instead of guessing.
+
+A feature that spans more than one task keeps its cross-session state in
+[.ai/STATE.md](.ai/STATE.md): `implement-task` updates it as its final step,
+and it is deleted when the feature branch merges.

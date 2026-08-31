@@ -15,6 +15,7 @@ old one is marked `Superseded by NNNN`. Filenames: `NNNN-kebab-title.md`.
 
 ## Index
 
-| #                                              | Title                    | Status   |
-| ---------------------------------------------- | ------------------------ | -------- |
-| [0001](0001-adopt-ai-driven-workflow.md)       | Adopt AI-driven workflow | Accepted |
+| #                                                   | Title                             | Status   |
+| --------------------------------------------------- | --------------------------------- | -------- |
+| [0001](0001-adopt-ai-driven-workflow.md)            | Adopt AI-driven workflow          | Accepted |
+| [0002](0002-adopt-impeccable-design-quality.md)     | Adopt Impeccable for design quality | Accepted |

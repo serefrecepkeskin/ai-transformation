@@ -148,6 +148,20 @@ def prompt_text(template: str, greenfield: bool = False) -> str:
     return text.replace("{{TEMPLATE}}", template)
 
 
+def ask_path(question: str) -> str:
+    """Keep asking until something is typed.
+
+    An empty answer would resolve to the current directory, which is almost
+    never the repo that was meant — and installing a template into the wrong
+    repo is tedious to undo.
+    """
+    while True:
+        answer = input(question).strip()
+        if answer:
+            return answer
+        print("  a path is required — type '.' for the current directory", file=sys.stderr)
+
+
 def ask(question: str, options: list[str]) -> str:
     for i, option in enumerate(options, 1):
         print(f"  {i}) {option}")
@@ -176,7 +190,7 @@ def main() -> int:
 
     interactive = not (args.template and args.target)
     template = args.template or ask("Template?", TEMPLATES)
-    target = Path(args.target or input("Target repo path: ").strip()).expanduser().resolve()
+    target = Path(args.target or ask_path("Target repo path: ")).expanduser().resolve()
 
     if not target.is_dir():
         print(f"error: {target} is not a directory", file=sys.stderr)

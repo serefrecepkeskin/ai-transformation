@@ -37,6 +37,17 @@ python3 templates_en/start.py frontend-web ~/kod/app # var olan depo
 python3 templates_en/start.py --new python-service . # sıfırdan proje
 ```
 
+Sıfırdan projede dizini ve git deposunu sen açarsın, script değil:
+
+```bash
+mkdir -p ~/kod/yeni-proje && cd ~/kod/yeni-proje && git init
+python3 ~/kod/ai-transformation/templates_en/start.py --new python-service .
+```
+
+Git deposu olmayan bir dizinde script uyarıyor, çünkü hook'lar yollarını git
+üzerinden çözüyor. Etkileşimli modda yol sorusuna boş basılmıyor — bulunduğun
+dizini seçmek için `.` yaz.
+
 Script şablonu hedef depoya kopyalar (var olan dosyaya **dokunmaz**, `--force`
 ile ezer), sonra ekrana **bootstrap prompt**'unu basar. O metni Copilot'a ya da
 Claude Code'a yapıştırırsın. Deponun durumuna göre iki farklı prompt basılıyor;

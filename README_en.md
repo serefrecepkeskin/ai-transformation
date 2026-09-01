@@ -38,6 +38,17 @@ python3 templates_en/start.py frontend-web ~/code/app  # existing repo
 python3 templates_en/start.py --new python-service .   # new project
 ```
 
+For a new project you create the directory and the git repo, not the script:
+
+```bash
+mkdir -p ~/code/new-project && cd ~/code/new-project && git init
+python3 ~/code/ai-transformation/templates_en/start.py --new python-service .
+```
+
+The script warns when the target is not a git repository, because the hooks
+resolve their paths through git. In interactive mode an empty path answer is
+rejected — type `.` to pick the current directory.
+
 The script copies the template into the target repo (it never overwrites an
 existing file; `--force` does), then prints the **bootstrap prompt** to paste
 into Copilot or Claude Code. Which prompt depends on the state of the repo; the

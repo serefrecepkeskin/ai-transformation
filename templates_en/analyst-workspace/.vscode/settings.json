@@ -18,7 +18,6 @@
   "chat.tools.terminal.autoApprove": {
     // read-only git, and nothing else
     "/^git (status|diff|log|show|branch)\\b/": true,
-    "/^pre-commit run\\b/": true,
 
     // reading secrets
     "/\\b(cat|less|more|head|tail|bat|strings)\\b.*\\.(env|pem|key|p12|pfx)\\b/": false,
@@ -52,8 +51,7 @@
     "**/.mcp.json": false,
     "**/.claude/settings*.json": false,
     "**/.claude/hooks/**": false,
-    "**/.github/hooks/**": false,
-    "**/.pre-commit-config.yaml": false
+    "**/.github/hooks/**": false
   },
 
   // ── 3. Discovery ─────────────────────────────────────────────────────────

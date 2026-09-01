@@ -1,6 +1,6 @@
 # Tech Stack (Live Reference)
 
-> **PLACEHOLDER** — run the `bootstrap-research` skill to fill versions from the
+> **PLACEHOLDER** — paste the bootstrap prompt to fill versions from the
 > lockfile. This file is **living**: update it when the stack changes, with the
 > rationale recorded as an ADR.
 

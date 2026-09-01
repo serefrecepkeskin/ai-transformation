@@ -1,6 +1,6 @@
 # Conventions
 
-> **PLACEHOLDER** — run the `bootstrap-research` skill to replace the TODOs with
+> **PLACEHOLDER** — paste the bootstrap prompt to replace the TODOs with
 > the conventions actually observed in this codebase. Only rules the tools
 > (linter/formatter) don't already enforce belong here.
 
@@ -41,14 +41,16 @@
 
 ## Automated guardrails (Copilot hooks & approvals)
 
-- `.github/hooks/format-and-docs.json` — **postToolUse** auto-formats changed
+- `.claude/hooks/*.sh` — the hook scripts themselves, shared by both runtimes.
+  Wired up in `.claude/settings.json` (Claude Code) and
+  `.github/hooks/format-and-docs.json` (Copilot) — **postToolUse** auto-formats changed
   Python files (ruff format + ruff check --fix); **agentStop** reminds when code
   changed but `docs/` didn't (drift), or dependencies changed without an ADR.
   Non-blocking.
 - `.github/workflows/copilot-setup-steps.yml` — preinstalls dependencies in the
   Copilot coding agent's environment.
-- `.vscode/settings.json` — terminal command allowlist/denylist for agent mode
-  (`chat.tools.terminal.autoApprove`). Never set the global
+- `.vscode/settings.json` (Copilot) and `.claude/settings.json` (Claude Code)
+  — the command allowlist/denylist for agent mode. Never set the global
   `chat.tools.autoApprove` — it disables approval entirely.
 - The guardrail chain is: hooks → local quality gates → CI → review. Hooks are
   a convenience layer; gates and CI remain the enforcement.

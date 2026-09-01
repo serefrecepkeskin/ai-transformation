@@ -1,0 +1,44 @@
+{
+  "mcpServers": {
+    "mssql": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mssql-mcp-server"
+      ],
+      "env": {
+        "MSSQL_CONNECTION_STRING": "${MSSQL_CONNECTION_STRING}"
+      }
+    },
+    "postgres": {
+      "command": "uvx",
+      "args": [
+        "postgres-mcp",
+        "--access-mode=restricted"
+      ],
+      "env": {
+        "DATABASE_URI": "${DATABASE_URI}"
+      }
+    },
+    "mysql": {
+      "command": "uvx",
+      "args": [
+        "mysql-mcp-server"
+      ],
+      "env": {
+        "MYSQL_HOST": "TODO-host",
+        "MYSQL_PORT": "3306",
+        "MYSQL_USER": "TODO-readonly-user",
+        "MYSQL_PASSWORD": "${MYSQL_PASSWORD}",
+        "MYSQL_DATABASE": "TODO-database"
+      }
+    },
+    "oracle": {
+      "command": "TODO-company-approved-oracle-mcp",
+      "args": [],
+      "env": {
+        "ORACLE_CONNECTION_STRING": "${ORACLE_CONNECTION_STRING}"
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 # Architecture
 
-> **PLACEHOLDER** — run the `bootstrap-research` skill to fill this from the
+> **PLACEHOLDER** — paste the bootstrap prompt to fill this from the
 > real codebase. Keep it short; when an architectural decision changes, update
 > this file and write an ADR in the same PR.
 

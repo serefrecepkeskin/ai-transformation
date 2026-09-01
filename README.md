@@ -1,103 +1,108 @@
-# AI Dönüşümü — Copilot Proje Şablonları
+# AI Dönüşümü — Agent Proje Şablonları
 
 > English version: [README_en.md](README_en.md)
 
-GitHub Copilot ile AI destekli geliştirme için standart, kopyala-kullan
-yapılar. Bir ajanın ihtiyaç duyduğu her şey, Copilot'un **native** okuduğu üç
-yerde yaşar:
+AI destekli geliştirme için standart, kopyala-kullan yapılar. **Tek yapı, iki
+runtime:** aynı dosyaları hem GitHub Copilot (VS Code agent mode) hem Claude
+Code okuyor.
 
-| Parça         | Konum                       | Nedir                                                        |
-| ------------- | --------------------------- | ------------------------------------------------------------ |
-| Agent rehberi | `AGENTS.md` (depo kökü)     | Altın kurallar, komutlar, bilgi tabanı bağlantıları          |
-| Bilgi tabanı  | `docs/`                     | Rehberin bağlantı verdiği kısa referans dokümanları          |
-| Skill'ler     | `.github/skills/*/SKILL.md` | İş tarifleri; gerektiğinde yüklenir (progressive disclosure) |
-| Özel ajanlar  | `.github/agents/*.agent.md` | Uzmanlaşmış personalar (ör. code-reviewer)                   |
+| Parça          | Konum                        | Kim okuyor                        |
+| -------------- | ---------------------------- | --------------------------------- |
+| Agent rehberi  | `AGENTS.md`                  | Copilot native · Claude `CLAUDE.md` üzerinden |
+| Bilgi tabanı   | `docs/`                      | Rehberin bağlantı verdiği kısa referanslar |
+| Skill'ler      | `.claude/skills/*/SKILL.md`  | **İkisi de native** ([VS Code dokümantasyonu](https://code.visualstudio.com/docs/agent-customization/agent-skills)) |
+| Özel ajanlar   | `.claude/agents/` · `.github/agents/` | Aynı içerik, her runtime kendi formatında |
+| Hook script'leri | `.claude/hooks/*.sh`       | Tek script; manifest'i `.claude/settings.json` (Claude) + `.github/hooks/` (Copilot) |
+| MCP sunucuları | `.mcp.json` · `.vscode/mcp.json` | Aynı sunucular, her runtime kendi dosyasında |
+| Feature hafızası | `.ai/STATE.md` · `.ai/plans/` | Oturum aşan işin durumu ve planı |
 
 ## Şablonlar
 
-Üç şablon, tek dil: **`templates_en/`**. Paralel bir Türkçe sürüm vardı ve
-kaldırıldı — aynı şablonların ikiz kopyası, senkron tutulacak dosya sayısını
-ikiye katlayıp netlik değil drift üretiyordu.
-
-- `templates_en/frontend-web/` — UI / frontend projeleri (Next.js, React ve benzeri)
 - `templates_en/python-service/` — Python servisleri ve API'ler
+- `templates_en/frontend-web/` — UI / frontend projeleri (React, Next.js vb.)
 - `templates_en/analyst-workspace/` — iş analistleri: DB araştırması + görev yazımı
 
-## Bir şablon nasıl benimsenir
+## Kurulum
 
-1. `templates_en/<şablon>/` içeriğini hedef deponun köküne kopyalayın.
-2. Depoyu Copilot ile açıp **`bootstrap-research`** skill'ini çalıştırın:
-   gerçek kod tabanını (manifest'ler, CI, klasör yerleşimi) inceler ve `docs/`
-   içindeki her `PLACEHOLDER` alanını kanıtla doldurur; emin olamadığını
-   `TODO(confirm)` olarak işaretler.
-3. `TODO(confirm)` maddelerini ekiple gözden geçirin, sonra işaretleri silin.
-4. O andan itibaren doküman ve kodu `record-decision` skill'iyle (ADR'lar)
-   senkron tutun.
+```bash
+python3 templates_en/start.py                        # etkileşimli
+python3 templates_en/start.py frontend-web ~/kod/app # doğrudan
+```
 
-## docs/ taksonomisi (neden üç klasör)
+Script şablonu hedef depoya kopyalar (var olan dosyaya **dokunmaz**, `--force`
+ile ezer), sonra ekrana **bootstrap prompt**'unu basar. O metni Copilot'a ya da
+Claude Code'a yapıştırırsın: depoyu tarar, `AGENTS.md` ve `docs/` içindeki her
+`PLACEHOLDER`'ı gerçek kanıtla doldurur, emin olamadığını `TODO(confirm)` olarak
+işaretler, yığına özel skill'leri gerçek yollarla yeniden yazar ve eksik
+önkoşulları raporlar. Prompt tek başına da kullanılabilir:
+`templates_en/bootstrap-prompt.md`.
+
+Sonrasında: `TODO(confirm)` maddelerini ekiple gözden geçir, ADR 0001'i imzala,
+bir dosyayı düzenleyip hook'ların gerçekten ateşlediğini gör.
+
+## Skill'ler
+
+| Skill               | Ne yapar                                                        |
+| ------------------- | --------------------------------------------------------------- |
+| `implement-task`    | Bir isteği uçtan uca: anla → kur → kanıtla → kapılar → self-review → PR |
+| `plan-feature`      | Tek oturuma sığmayan iş: önce plan dosyası, sonra görev görev yürütme |
+| `debug-issue`       | Düzeltmeden önce kök neden: üret, sınırlara kanıt koy, kaynağa kadar izle |
+| `run-quality-gates` | Kapıları koştur, her biri için gerçek çıktıyla rapor ver         |
+| `self-review`       | Diff'i soğuk okuyan reviewer + gereksiz karmaşıklık taraması     |
+| `record-decision`   | ADR yaz + etkilenen dokümanı aynı PR'da güncelle                 |
+| `commit-and-pr`     | Commit/PR formatı: İngilizce conventional başlık, Türkçe gövde   |
+| `verify-ui`         | (frontend) Değişikliği gerçek tarayıcıda kanıtla                 |
+| `impeccable`        | (frontend) Tasarım kalitesi; `DESIGN.md`'ye karşı denetim        |
+| `new-component` · `new-endpoint` · `db-migration` | Yığına özgü tarifler                |
+
+Analist tarafında: `db-research`, `create-task`, `refine-task`,
+`update-db-catalog`.
+
+## Tarayıcıda doğrulama
+
+`verify-ui` runtime'a göre elindeki tarayıcıyı kullanır, sırayla:
+
+1. **VS Code'un yerleşik tarayıcı araçları** — Copilot agent mode, VS Code
+   1.127+ ile GA. Sayfayı açar, konsolu okur, ekran görüntüsü alır, tıklar.
+   Harici MCP gerekmez.
+2. **Claude in Chrome** — Claude Code + Chrome eklentisi; gerçek oturumla
+   gerçek tarayıcı (giriş yapılmış ekranlar için en iyisi).
+3. **Playwright MCP** — temiz ve script'lenebilir; akış e2e testine
+   dönüşecekse tercih edilir.
+
+Üçü de yoksa skill "doğrulayamadım" der ve component testlerine düşer —
+"kanıtlandı" demez.
+
+## docs/ taksonomisi
 
 - `docs/engineering/` — **nasıl** inşa ediyoruz: mimari, yığın, konvansiyonlar,
   test, iş akışı.
-- `docs/domain/` — **ne** inşa ediyoruz: sözlük, iş kuralları. Kararlı
-  referans; yalnız bir kavram gerçekten değiştiğinde güncellenir, feature
-  başına asla.
-- `docs/decisions/` — **neden**: numaralı, değişmez ADR'lar. Değişen karar,
-  eskisini geçersiz kılan yeni bir ADR alır. ADR kodla aynı PR'da gider.
+- `docs/domain/` — **ne** inşa ediyoruz: sözlük, iş kuralları. Kararlı referans.
+- `docs/decisions/` — **neden**: numaralı, değişmez ADR'lar. Kararla aynı PR'da.
 
-## Token ve maliyet optimizasyonu
+## Token ve maliyet
 
-1. **Önce kısa doküman.** `AGENTS.md` + otomatik yüklenen her şeyin bedeli
-   her istekte ödenir. Rehberi ≤ ~130 satır, her skill'i ≤ ~60 satır tutun;
-   detay, yalnız gerektiğinde okunan bağlantılı dokümanlara gider.
-2. **Skill'ler progressive disclosure'dır.** Copilot bir SKILL.md gövdesini
-   yalnız description prompt'la eşleşince yükler. İsabetli "ne zaman kullan"
-   cümlesi, eldeki en ucuz optimizasyondur.
-3. **Copilot'un yerleşik kod indeksi.** GitHub'da barındırılan depolar
-   otomatik olarak uzak semantik indeks alır (push'tan saniyeler sonra
-   güncellenir) — kurulum yok, maliyet yok. Lokal indeksleme ~2.500 dosyaya
-   kadar; ötesinde kalite düşer.
-4. **Büyük depolar için MCP kod indeksi.** Bir depo yerleşik indeksi aşarsa ya
-   da ajanlar grep'e token yakıyorsa bir indeks MCP sunucusu ekleyin:
-   [zilliztech/claude-context](https://github.com/zilliztech/claude-context)
-   (vektör arama, ~%40 token azaltımı) veya
-   [codebase-memory-mcp](https://github.com/DeusData/codebase-memory-mcp)
-   (tree-sitter AST bilgi grafı, yapısal sorgular). `.vscode/mcp.json` içinde
-   tanımlayın; benimsemeyi ADR olarak kaydedin.
-5. **Model karması.** Taslağı düşük maliyetli modelle yazın, incelemeyi en
-   güçlü modelle yapın. Copilot'ta: scaffold/agent koşularında ucuz model,
-   `self-review` geçişinde en güçlü model. "Codex yazar, Claude review eder"
-   deseninin aynısı.
+1. **Önce kısa doküman.** `AGENTS.md` her istekte ödenir — ≤ ~130 satır, her
+   skill ≤ ~60 satır; detay linkli dokümana gider.
+2. **Skill'ler gerektiğinde yüklenir.** İsabetli "ne zaman kullan" cümlesi
+   eldeki en ucuz optimizasyondur.
+3. **Yerleşik kod indeksi.** GitHub'da barındırılan depolar otomatik uzak
+   semantik indeks alır. Lokal indeksleme ~2.500 dosyaya kadar iyi çalışır.
+4. **Büyük depolar için MCP kod indeksi.** Gerekirse
+   [claude-context](https://github.com/zilliztech/claude-context) veya
+   [codebase-memory-mcp](https://github.com/DeusData/codebase-memory-mcp);
+   benimsemeyi ADR olarak kaydet.
+5. **Model karması.** Taslağı ucuz modelle yaz, `self-review` geçişini en güçlü
+   modelle yap.
 
-## Çalışma prensipleri
+## Kapsam dışı bırakılanlar
 
-1. **Definition of Ready olmadan görev yok.** İş, geliştirici deposuna
-   ölçülebilir kabul kriterleri, DoD, nasıl-test-edilir ve doğrulanmış veri
-   kaynakları taşıyan bir `task.md` olarak girer. Analistin `refine-task`
-   kapısı bunu zorlar; eksik görev tahminle değil, iadeyle karşılanır.
-2. **Varsayım değil kanıt.** Analistler alan adlarını canlı şemaya karşı
-   doğrular (salt okunur); geliştiriciler değişikliği tarayıcıda veya testle
-   kanıtlar. Doğrulanmamış iddia `TODO(confirm)` etiketi alır, asla gerçek
-   gibi yazılmaz.
-3. **Her görev test getirir.** Uygun katman, şablonun test taksonomisinden
-   gelir (unit / integration / e2e / smoke + teknolojiye özel katmanlar);
-   PR, kabul kriterlerini testlerle eşler.
-4. **Guardrail zinciri: hook → kapı → CI → review.** Copilot hook'ları
-   otomatik formatlar ve hatırlatır (analist tarafında yazma-SQL'i reddeder);
-   lokal kalite kapıları ve CI zorlar; reviewer söz değil kanıt okur.
-5. **Küçük görevler, tek muhatap.** Görev başına tek çıktı; görev yazarı
-   ulaşılabilir kalır ve cevaplarını görev dosyasını güncelleyerek verir.
-6. **Kararlar netleştiği anda ADR olur** — kodla ve etkilenen dokümanla aynı
-   PR'da.
-7. **Token bilinçli harcanır.** Kısa dokümanlar, gerektiğinde yüklenen
-   skill'ler, yerleşik kod indeksi ve model karması (ucuz model yazar, en
-   güçlü model inceler).
+- **Şablon senkronizasyonu.** Depolar arası drift'i ölçen sürüm damgası ve
+  `standard-check` CI kapısı kaldırıldı; şu an öncelik değil. Repo sayısı
+  artınca geri gelmesi gereken ilk şey budur.
+- **Analist bağımlılığı.** Geliştirici şablonları artık analist yazımı bir
+  `task.md` şart koşmuyor; iş nereden gelirse gelsin, "done" gözlemlenebilir
+  olarak ifade edilebiliyorsa alınır. Analist şablonu bağımsız durmaya devam
+  ediyor.
 
-## Yardımcı dokümanlar (Türkçe)
-
-- `sunum.pptx` — bu yapıların ekibe sunumu (10 slayt, görselli)
-- `rehber.docx` — ekip ve yöneticiler için kısa rehber, kaynakçalı
-- `yapi-rehberi.docx` — yapıdaki her dosya ne için; hook'lar ve docs/
-  klasörünün mantığı
-- `mcp-rehberi.docx` — MCP nedir, analistler onunla nasıl çalışır, gerçekten
-  şart mı
-- `yol-haritasi.xlsx` — benimseme yol haritası, metrikler, riskler
+Değerlendirme ve gerekçeler: `ai-coding-standardi.docx`.

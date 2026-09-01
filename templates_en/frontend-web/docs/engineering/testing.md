@@ -1,6 +1,6 @@
 # Testing
 
-> **PLACEHOLDER** — run the `bootstrap-research` skill to fill the real runners
+> **PLACEHOLDER** — paste the bootstrap prompt to fill the real runners
 > and CI gates. The folder taxonomy below is the company standard; keep it.
 
 ## Test taxonomy (folders are the contract)

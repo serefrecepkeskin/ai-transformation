@@ -2,20 +2,10 @@
   "version": 1,
   "hooks": {
     "postToolUse": [
-      {
-        "type": "command",
-        "bash": ".github/hooks/scripts/format-changed.sh",
-        "cwd": ".",
-        "timeoutSec": 60
-      }
+      { "type": "command", "bash": ".claude/hooks/format-changed.sh", "cwd": ".", "timeoutSec": 60 }
     ],
     "agentStop": [
-      {
-        "type": "command",
-        "bash": ".github/hooks/scripts/remind-docs.sh",
-        "cwd": ".",
-        "timeoutSec": 30
-      }
+      { "type": "command", "bash": ".claude/hooks/remind-docs.sh", "cwd": ".", "timeoutSec": 30 }
     ]
   }
 }

@@ -9,7 +9,7 @@
 
 ## Pending — action needed
 
-- [ ] TODO: added by bootstrap-research / during development
+- [ ] TODO: added by the bootstrap prompt / during development
 
 ## Done
 

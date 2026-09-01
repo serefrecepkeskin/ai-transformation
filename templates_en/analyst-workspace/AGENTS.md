@@ -31,18 +31,20 @@ tasks. The output of this repo is a **`task.md`** file (see
 
 ## Database connections (MCP)
 
-Connections are defined in `.vscode/mcp.json` — one read-only MCP server per
-engine (SQL Server, PostgreSQL, Oracle, MySQL). Credentials are prompted via
-VS Code inputs or read from env vars; they are **never committed**.
+Connections are defined per runtime — `.vscode/mcp.json` (Copilot, credentials
+prompted as VS Code inputs) and `.mcp.json` (Claude Code, credentials from the
+environment) — one read-only MCP server per engine (SQL Server, PostgreSQL,
+Oracle, MySQL). Credentials are **never committed**.
 
 > The server commands in `mcp.json` are starting examples. Confirm the
 > company-approved MCP server and a read-only DB login per engine with the
 > platform team before first use, and prefer a replica/reporting instance
 > over production primaries.
 
-A Copilot hook (`.github/hooks/guard-readonly.json`, preToolUse) additionally
-**denies** any tool call containing write/DDL SQL — defense in depth on top of
-the read-only login, not a substitute for it.
+A pre-tool hook (`.claude/hooks/guard-readonly-sql.sh`, wired up in
+`.claude/settings.json` for Claude Code and `.github/hooks/guard-readonly.json`
+for Copilot) additionally **denies** any tool call containing write/DDL SQL —
+defense in depth on top of the read-only login, not a substitute for it.
 
 ## Knowledge Base
 
@@ -53,6 +55,9 @@ the read-only login, not a substitute for it.
 - `tasks/` — authored tasks, one file each: `<ID>-<kebab-title>.md`
 
 ## Capabilities (skills)
+
+Skills live in `.claude/skills/`, read natively by both Claude Code and VS Code
+Copilot.
 
 - **skill `create-task`** — author a task.md from the template; verifies data
   references via db-research; stops and asks when required fields are unknown.

@@ -2,12 +2,7 @@
   "version": 1,
   "hooks": {
     "preToolUse": [
-      {
-        "type": "command",
-        "bash": ".github/hooks/scripts/guard-readonly-sql.sh",
-        "cwd": ".",
-        "timeoutSec": 10
-      }
+      { "type": "command", "bash": ".claude/hooks/guard-readonly-sql.sh", "cwd": ".", "timeoutSec": 10 }
     ]
   }
 }

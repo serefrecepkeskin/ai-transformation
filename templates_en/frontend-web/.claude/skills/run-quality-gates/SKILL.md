@@ -8,6 +8,13 @@ description: Runs the repo's quality gates — typecheck, lint, format check and
 > **Iron law: no green claim without fresh output.** If you did not run the
 > command in this session and read what it printed, you cannot say it passes.
 
+Gate 0 is `pre-commit run --all-files` when the repo has a
+`.pre-commit-config.yaml`. It is the cheapest gate and the one CI will run
+anyway. Some of its hooks fix files in place (`ruff --fix`, `eslint --fix`) and
+then report failure — that is a pass in two steps: read what changed, keep the
+fix if it is right, and run the hook again until it is clean. Never `--no-verify`
+a commit; a hook that is wrong is a decision (`record-decision`), not a flag.
+
 Run each gate from the Commands section of AGENTS.md (PLACEHOLDER — after the
 bootstrap prompt these are the repo's real scripts):
 

@@ -21,6 +21,8 @@ and Claude Code.
 | Hook scripts     | `.claude/hooks/*.sh`                  | One script; manifests in `.claude/settings.json` + `.github/hooks/` |
 | MCP servers      | `.mcp.json` · `.vscode/mcp.json`      | Same servers, one file per runtime |
 | Feature memory   | `.ai/STATE.md` · `.ai/plans/`         | Cross-session state and plans     |
+| Quality gate     | `.pre-commit-config.yaml`             | git, at commit time — independent of the agent |
+| Permissions / privacy | `.vscode/settings.json` · `.claude/settings.json` | Same policy, each runtime in its own file |
 
 ## Templates
 
@@ -62,6 +64,70 @@ are written up as ADRs in the same session.
 
 Then: review the `TODO(confirm)` items with the team, sign ADR 0001, and make
 one edit to confirm the hooks actually fire.
+
+## The lint gate — how it arrives in a repo that has none
+
+Three moments, three different questions. The one that usually gets confused is
+1 versus 3: **the script puts the file there, the agent makes it fit the stack.**
+
+1. **`start.py` copies.** `.pre-commit-config.yaml` — plus `eslint.config.js`
+   (frontend) and `requirements-dev.txt` (python) — is written into the repo
+   **only if that file isn't already there**. If it is, the repo's own version
+   wins and shows up under "left untouched". So "add it if missing" is the copy
+   step itself, not extra logic.
+2. **`start.py` reports.** After copying it prints a `lint readiness` block: is
+   `pre-commit` on PATH, is `.git/hooks/pre-commit` wired, does `pyproject.toml`
+   have a `[tool.ruff]` section, does `package.json` have a `lint` script or a
+   husky/lint-staged trace. **It installs nothing.** In interactive mode it asks
+   exactly one question (`run pre-commit install now? [y/N]`) and acts only on an
+   explicit `y` — writing into `.git/hooks/` unasked is the opposite of what we
+   demand from the agent.
+3. **The bootstrap prompt adapts.** This is where the real decision lives,
+   because it takes *reading* the stack. The prompt splits it into three cases:
+   - **(a) the repo had no lint setup** → the shipped config becomes the setup:
+     `[tool.ruff]`/`[tool.pylint]` goes into the **existing** `pyproject.toml`
+     (the template deliberately ships none, so it can't overwrite theirs),
+     `eslint.config.js` is adapted to TypeScript/Next.js, every `rev:` is pinned
+     to the installed version. Then `pre-commit run --all-files` runs **once**:
+     legacy code failing is expected, so it is *reported* as counts — no silent
+     mass reformat, no loosened rule. A rule that genuinely doesn't fit is an
+     ADR, not a config edit.
+   - **(b) the repo already had lint config** → theirs wins.
+     `.pre-commit-config.yaml` is rewritten to call their commands and the
+     duplicate hooks are deleted. One definition of the gate.
+   - **(c) husky / lint-staged was already there** → two gates are worse than
+     one: either husky calls `pre-commit run`, or the shipped config goes. The
+     agent says which.
+4. **Then it stays up.** `pre-commit run --all-files` is in the `AGENTS.md`
+   Commands section and is **Gate 0** in the `run-quality-gates` skill. No
+   `--no-verify`.
+
+Once per clone: `pip install pre-commit && pre-commit install`. Writing that into
+the README and `manual-actions.md` is the bootstrap step's job.
+
+## Privacy and permissions
+
+Three layers, each guaranteeing something different — trusting one without
+knowing what it does is the actual risk:
+
+| Layer | Where | What it really does |
+| --- | --- | --- |
+| **Discovery** | `search.exclude`, `files.associations`, `github.copilot.enable`, `.gitignore` | Keeps secret files out of search, the workspace index and inline completions. Does **not** stop a targeted read |
+| **Action** | `chat.tools.terminal.autoApprove`, `chat.tools.edits.autoApprove`, `chat.agent.sandbox.enabled`, `permissions.deny` | Approval gates on commands and edits. On the **Claude Code** side `Read()`/`Edit()` deny rules are a real block — they cover the file tools *and* the `cat`/`head`/`tail`/`sed` commands Claude Code recognises. The sandbox is the only OS-level block on either side |
+| **Prompt** | Golden rule: "secrets are never read, printed or pasted" | Covers what the other two cannot |
+
+Why the list is surgical instead of "block every `.ini`": **a deny rule cannot
+carry an exception.** `Read(**/*.ini)` would also close `alembic.ini`,
+`pytest.ini` and `setup.cfg` with no way to reopen them — the `db-migration`
+skill would stop working that day. So the list names what it means: `.env*`,
+keys and certificates, `secrets/**`, `~/.ssh`, `~/.aws`, `default.ini`,
+`config/*.ini`.
+
+**The honest limit:** GitHub's content exclusion is **not applied in Copilot's
+agent and edit modes** and requires Business/Enterprise. There is no hard read
+block on the Copilot side; what you get there is approval + discovery + the
+prompt rule. A secret that must never be readable belongs in a vault, not in the
+workspace.
 
 ## Skills
 
@@ -123,6 +189,7 @@ all": **exactly one was installed**, and from the rest we took ideas, not code.
 | Project | Decision | Why |
 | --- | --- | --- |
 | **Impeccable** | installed | The only candidate that fills the design-quality gap; 59 deterministic rules run without an LLM, so they attach to a hook and to CI. `.claude/skills/impeccable/`, ADR 0002 |
+| **Karpathy skills** ([multica-ai](https://github.com/multica-ai/andrej-karpathy-skills)) | idea taken | Three of its four principles were already covered in more detail by the Golden Rules: *Simplicity First* → the ladder in rule #4, *Goal-Driven Execution* → rules #2/#3 plus `implement-task`'s "if you can't name the proof, the task isn't ready". The real gap was two items, now folded in: presenting alternatives / pushing back into rule #1, and the **surgical test** (every changed line traces to the request, don't touch neighbouring code, clean up only your own orphans) into rule #4. Not installed as a skill or plugin — it would be a second source of truth next to `AGENTS.md` (same reason as GSD Core) |
 | **Ponytail** | idea taken | Its plugin writes rules into `copilot-instructions.md`, which is deliberately just a pointer here. The ladder became golden rule #4, root-cause became rule #5 |
 | **Superpowers** | writing pattern taken, **plugin not installed** | Its value is not in its skills but in how they are written: an iron law, red flags, and a table that pre-empts the agent's own rationalizations — `run-quality-gates`, `debug-issue` and `self-review` follow it. The plugin itself fills the same slot as GSD, mandates TDD as a culture (delete code written before its test) and puts a skill call in front of every request |
 | **GSD Core** | mechanism taken, framework not installed | It brings 70+ skills, its own installer and its own `.planning/` tree — a second source of truth beside `AGENTS.md`. Its three load-bearing mechanisms fit in the `plan-feature` skill |

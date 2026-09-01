@@ -1,0 +1,60 @@
+# Commit-time quality gate. Same tools the agent runs in `run-quality-gates`,
+# enforced by git so a commit cannot skip them.
+#
+# TEMPLATE — the bootstrap prompt reconciles this with the repo's real stack
+# (pinned tool versions, the actual test command, an existing husky/lint-staged
+# setup). Delete a hook the repo genuinely does not need; say so in the ADR.
+#
+#   pip install pre-commit && pre-commit install   # once, per clone
+#   pre-commit run --all-files                     # full sweep
+#   pre-commit run --hook-stage manual --all-files # heavier manual hooks
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # TODO(confirm): pin to the ruff version in requirements-dev.txt.
+    rev: v0.14.13
+    hooks:
+      # `ruff-check` is the current hook id; plain `ruff` still works but is a
+      # deprecated alias and prints a warning on every run.
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      # Blocks a committed private key outright — the mechanical half of the
+      # "secrets are never read, printed or pasted" golden rule.
+      - id: detect-private-key
+      - id: trailing-whitespace
+        exclude: \.(svg|lock)$
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+
+  - repo: local
+    hooks:
+      - id: pylint
+        name: pylint (errors only)
+        entry: pylint --errors-only
+        language: system
+        types: [python]
+        require_serial: true
+        # Errors-only keeps this fast enough to run on every commit; the full
+        # ruleset belongs in CI, not in the commit loop.
+
+      - id: pytest
+        name: pytest
+        # A commit can happen with no venv active, so prefer the repo's own
+        # .venv and fall back to whatever python is on PATH (active shell, CI).
+        entry: bash -c 'if [ -x .venv/bin/python ]; then .venv/bin/python -m pytest -q; else python -m pytest -q; fi'
+        language: system
+        # The runner gets no filenames — the whole suite runs every time.
+        # TODO(confirm): if the suite is slow enough to hurt the commit loop,
+        # move this hook to `stages: [manual]` and keep it as a CI gate.
+        pass_filenames: false
+        always_run: true
+        require_serial: true

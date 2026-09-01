@@ -12,12 +12,18 @@ tasks. The output of this repo is a **`task.md`** file (see
    task needs data changed, that goes *into the task* for developers.
 2. **No sensitive data in artifacts.** Column names, types and row *shapes* are
    evidence; actual customer values (names, emails, IDs, balances) are not.
-   Never paste PII or secrets into a task, the catalog, or chat.
+   Never paste PII or secrets into a task, the catalog, or chat. Connection
+   strings, `.env` files and key files are not yours to open either — ask for a
+   credential by *name*, never by contents. The deny rules in
+   `.claude/settings.json` / `.vscode/settings.json` and the
+   `detect-private-key` commit hook are backstops, not a substitute for this.
 3. **Evidence over memory.** Every table/column referenced in a task is
    verified against the live schema via the `db-research` skill, with the
    verification date noted. No field names from memory.
 4. **No silent assumptions.** An unconfirmed business rule goes into the task's
-   "Open questions" section, clearly marked — never written as fact.
+   "Open questions" section, clearly marked — never written as fact. If two
+   readings of a rule are both reasonable, write down both; picking one
+   silently is how a wrong spec reaches a developer as fact.
 5. **A task ships ready or not at all.** Before delivery, `refine-task` must
    pass: measurable acceptance criteria, DoD, how-to-test, data sources.
    A vague task wastes a developer-agent loop; sending it back costs more
@@ -45,6 +51,10 @@ A pre-tool hook (`.claude/hooks/guard-readonly-sql.sh`, wired up in
 `.claude/settings.json` for Claude Code and `.github/hooks/guard-readonly.json`
 for Copilot) additionally **denies** any tool call containing write/DDL SQL —
 defense in depth on top of the read-only login, not a substitute for it.
+
+`.pre-commit-config.yaml` closes the other end: `detect-private-key` blocks a
+committed key and a low large-file limit catches a query-result dump before it
+reaches history (`pip install pre-commit && pre-commit install`, once per clone).
 
 ## Knowledge Base
 

@@ -16,7 +16,10 @@ on each request.
 ## Golden Rules
 
 1. **Think before coding.** No silent assumptions. If the task or a business
-   rule is unclear, stop and ask; state every assumption explicitly.
+   rule is unclear, stop and ask; state every assumption explicitly. If two
+   readings of the task are both reasonable, put both on the table instead of
+   silently picking one. If you see a simpler route, say so — pushing back on
+   a solution you think is wrong is part of the job, not a detour.
 2. **Evidence before claims.** Never say done, fixed, passing or working
    without having run the command *in this session* and read its output. No
    "should work", no "looks correct". If you did not run it, say that instead.
@@ -32,6 +35,10 @@ on each request.
    → one line; (7) only then write the minimum that works. The ladder starts
    *after* the problem is understood — be lazy about the solution, never about
    reading. Laziness never applies to validation, error handling or security.
+   **The surgical test: every changed line traces back to the request.** Don't
+   "improve" neighbouring code, comments or formatting; don't refactor what
+   isn't broken. Spot unrelated dead code? Say so, don't delete it. Clean up
+   only the imports, variables and functions *your own* change orphaned.
 5. **No fix without a root cause.** A bug report names a symptom. Find where
    the bad value is born before editing anything, and fix it there — one guard
    in the shared function beats a guard in every caller. Use the `debug-issue`
@@ -47,13 +54,21 @@ on each request.
    updated, in the same PR. When unsure, lean toward recording.
 9. **Validate at the boundaries.** External input (HTTP, queue, third-party
    API) is untrusted: parse/validate it at the edge; typed models inside.
-10. **Self-review before push/PR.** Run the `self-review` skill; fix
+10. **Secrets are never read, printed or pasted.** `.env` files, keys and
+    certificates, credential-bearing `.ini` files, cloud credential stores are
+    not the agent's business — and the deny rules in
+    `.claude/settings.json` / `.vscode/settings.json` are a backstop, not a
+    substitute for this rule. Need a value? Ask for its *name*, never its
+    contents; the human half goes on
+    [manual-actions.md](docs/engineering/manual-actions.md). If a secret does
+    surface: don't use it, don't echo it, and put its rotation on that page.
+11. **Self-review before push/PR.** Run the `self-review` skill; fix
     critical/medium findings first.
-11. **Track what's on the humans.** Secrets, access, external artifacts go on
+12. **Track what's on the humans.** Secrets, access, external artifacts go on
     [manual-actions.md](docs/engineering/manual-actions.md).
-12. **Schema changes only via migrations** — never edit the database or a
+13. **Schema changes only via migrations** — never edit the database or a
     generated migration by hand; use the `db-migration` skill.
-13. **Keep docs short and current.** Update the relevant doc with the change
+14. **Keep docs short and current.** Update the relevant doc with the change
     that affects it; never paste long content where a link suffices.
 
 ## Commands
@@ -62,6 +77,8 @@ PLACEHOLDER — filled from pyproject/Makefile/scripts.
 
 - `TODO` — run locally
 - `TODO` — lint (e.g. ruff) · type check (e.g. mypy) · tests (e.g. pytest)
+- `pre-commit install` — once per clone; wires the commit-time gate
+- `pre-commit run --all-files` — the same gate over the whole tree
 
 ## Knowledge Base
 
@@ -107,8 +124,11 @@ Code Copilot. Invoke one by name (`/implement-task`) or let the agent pick it.
 
 Guardrails: hooks auto-format changed files and remind on docs drift
 (`.claude/hooks/`, wired up in `.claude/settings.json` for Claude Code and
-`.github/hooks/` for Copilot); safe commands are pre-approved in both
-`.claude/settings.json` and `.vscode/settings.json`.
+`.github/hooks/` for Copilot); `.pre-commit-config.yaml` runs the same gate at
+commit time; safe commands are pre-approved and secret files denied in both
+`.claude/settings.json` and `.vscode/settings.json` — see
+[conventions.md](docs/engineering/conventions.md#automated-guardrails-copilot-hooks--approvals)
+for what each layer really enforces.
 
 ## Cross-session memory
 

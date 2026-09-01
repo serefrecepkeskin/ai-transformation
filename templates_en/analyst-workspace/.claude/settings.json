@@ -1,15 +1,50 @@
 {
   "$schema": "https://json.schemastudio.com/claude-code-settings.json",
   "permissions": {
-    "allow": ["Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git show:*)", "Bash(git branch:*)", "Bash(rg:*)"],
-    "deny": ["Bash(rm -rf:*)", "Bash(git push --force:*)", "Bash(git reset --hard:*)"]
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(rg:*)",
+      "Bash(pre-commit run:*)"
+    ],
+    "deny": [
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(**/*.p12)",
+      "Read(**/*.pfx)",
+      "Read(secrets/**)",
+      "Read(**/*credential*)",
+      "Read(**/.npmrc)",
+      "Read(**/.pypirc)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.config/gcloud/**)",
+      "Read(~/.kube/config)",
+      "Edit(.env)",
+      "Edit(.env.*)",
+      "Edit(secrets/**)",
+      "Bash(rm -rf:*)",
+      "Bash(git push --force:*)",
+      "Bash(git reset --hard:*)"
+    ]
   },
   "hooks": {
     "PreToolUse": [
       {
         "matcher": "mcp__.*",
         "hooks": [
-          { "type": "command", "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-readonly-sql.sh", "timeout": 10 }
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-readonly-sql.sh",
+            "timeout": 10
+          }
         ]
       }
     ]

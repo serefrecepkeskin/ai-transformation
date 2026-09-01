@@ -16,7 +16,10 @@ on each request.
 ## Golden Rules
 
 1. **Think before coding.** No silent assumptions. If the task, design intent
-   or a business rule is unclear, stop and ask; state every assumption.
+   or a business rule is unclear, stop and ask; state every assumption. If two
+   readings of the task are both reasonable, put both on the table instead of
+   silently picking one. If you see a simpler route, say so — pushing back on
+   a solution you think is wrong is part of the job, not a detour.
 2. **Evidence before claims.** Never say done, fixed, passing or working
    without having run the command or looked at the page *in this session*. UI
    changes are proven in a browser via the `verify-ui` skill (screenshot,
@@ -34,7 +37,11 @@ on each request.
    (7) only then write the minimum that works. The ladder starts *after* the
    problem is understood — be lazy about the solution, never about reading.
    Laziness never applies to validation, error handling, security or
-   accessibility.
+   accessibility. **The surgical test: every changed line traces back to the
+   request.** Don't "improve" neighbouring code, comments or formatting; don't
+   refactor what isn't broken. Spot unrelated dead code? Say so, don't delete
+   it. Clean up only the imports, variables and components *your own* change
+   orphaned.
 5. **No fix without a root cause.** A bug report names a symptom. Find where
    the bad value is born before editing anything, and fix it there. Use the
    `debug-issue` skill when the cause is not obvious in one read.
@@ -50,12 +57,20 @@ on each request.
    domain-rule interpretation settles, run the `record-decision` skill: ADR in
    `docs/decisions/` + the affected doc updated, in the same PR.
 9. **User-facing text goes through i18n**, never hardcoded.
-10. **Self-review before push/PR.** Run the `self-review` skill; fix
+10. **Secrets are never read, printed or pasted.** `.env` files, keys and
+    certificates, API tokens, cloud credential stores are not the agent's
+    business — and the deny rules in `.claude/settings.json` /
+    `.vscode/settings.json` are a backstop, not a substitute for this rule.
+    Need a value? Ask for its *name*, never its contents; the human half goes
+    on [manual-actions.md](docs/engineering/manual-actions.md). If a secret
+    does surface: don't use it, don't echo it, and put its rotation on that
+    page. A key that reaches the browser bundle is public — treat it as one.
+11. **Self-review before push/PR.** Run the `self-review` skill; fix
     critical/medium findings first.
-11. **Track what's on the humans.** Anything only a human can do (secret,
+12. **Track what's on the humans.** Anything only a human can do (secret,
     access, external artifact) goes on
     [manual-actions.md](docs/engineering/manual-actions.md).
-12. **Keep docs short and current.** Update the relevant doc with the change
+13. **Keep docs short and current.** Update the relevant doc with the change
     that affects it; never paste long content where a link suffices.
 
 ## Commands
@@ -65,6 +80,8 @@ PLACEHOLDER — filled from package.json scripts.
 - `npm run dev` — dev server (TODO(confirm) port)
 - `npm run typecheck` · `npm run lint` · `npm run format:check` · `npm run test`
 - `npm run build`
+- `pre-commit install` — once per clone; wires the commit-time gate
+- `pre-commit run --all-files` — the same gate over the whole tree
 
 ## Knowledge Base
 
@@ -114,8 +131,11 @@ Code Copilot. Invoke one by name (`/verify-ui`) or let the agent pick it.
 
 Guardrails: hooks auto-format changed files, run the design detector on edited
 UI files, and remind on docs drift (`.claude/hooks/`, wired up in
-`.claude/settings.json` for Claude Code and `.github/hooks/` for Copilot); safe
-commands are pre-approved in both settings files.
+`.claude/settings.json` for Claude Code and `.github/hooks/` for Copilot);
+`.pre-commit-config.yaml` runs the same gate at commit time; safe commands are
+pre-approved and secret files denied in both settings files — see
+[conventions.md](docs/engineering/conventions.md#automated-guardrails-copilot-hooks--approvals)
+for what each layer really enforces.
 
 ## Cross-session memory
 

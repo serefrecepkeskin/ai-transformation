@@ -1,15 +1,103 @@
 {
-  // Auto-approve safe, read-only and dev-loop terminal commands for Copilot
-  // agent mode to cut approval-prompt noise. false = always ask.
-  // Deliberately NOT set: "chat.tools.autoApprove" (global) — it disables the
-  // safety mechanism entirely. Keys support exact strings or /regex/.
+  // Agent guardrails for GitHub Copilot (VS Code agent mode). The Claude Code
+  // twin of this file is .claude/settings.json — keep the two in sync.
+  // docs/engineering/conventions.md explains the three layers and their limits.
+  //
+  // Deliberately NOT set:
+  //   chat.tools.global.autoApprove — approves every tool and disables the
+  //     safety mechanism entirely. (Older VS Code named it chat.tools.autoApprove.)
+  //   the "additional read access folders" setting — grants agent tools read
+  //     access outside the workspace. Widening the blast radius needs an ADR.
+
+  // ── 1. Terminal commands ─────────────────────────────────────────────────
+  // true = auto-approved, false = always ask. Keys are exact strings or
+  // /regex/. VS Code ships its own deny defaults (rm, curl, wget, chmod,
+  // chown, kill, eval); the false rules below restate and widen them so the
+  // policy survives chat.tools.terminal.ignoreDefaultAutoApproveRules.
   "chat.tools.terminal.autoApprove": {
+    // the dev loop — safe to run unattended
     "/^git (status|diff|log|show|branch)\\b/": true,
     "git add": true,
     "/^npm run (lint|test|typecheck|format:check|build)\\b/": true,
     "/^npx (prettier|eslint|tsc|vitest|playwright)\\b/": true,
-    "/^rm -rf\\b/": false,
-    "/^git push --force/": false,
-    "/^git reset --hard/": false
-  }
+    "/^pre-commit run\\b/": true,
+
+    // reading secrets
+    "/\\b(cat|less|more|head|tail|bat|strings)\\b.*\\.(env|pem|key|p12|pfx)\\b/": false,
+    "/\\b(printenv|env|export)\\b/": false,
+    // moving data off the machine
+    "/^(curl|wget|nc|ncat|ssh|scp|sftp|rsync)\\b/": false,
+    // destructive
+    "/^rm\\b/": false,
+    "/^git push/": false,
+    "/^git reset --hard/": false,
+    "/^git clean/": false,
+    // privilege
+    "/^(sudo|doas|chmod|chown)\\b/": false,
+    // infrastructure — real environments, never unattended
+    "/^(aws|az|gcloud|kubectl|helm|terraform)\\b/": false,
+    // publishing and credential handling
+    "/^(npm|pnpm|yarn|pip|uv|pipx|docker)\\s+(publish|login|logout|config|token)\\b/": false
+  },
+
+  // ── 2. File edits ────────────────────────────────────────────────────────
+  // false = the agent must ask before editing a matching file. Covers secrets
+  // and the files that define the agent's own limits — it must not be able to
+  // widen its permissions without a human seeing the diff.
+  "chat.tools.edits.autoApprove": {
+    "**/.env*": false,
+    "**/*.pem": false,
+    "**/*.key": false,
+    "**/*.p12": false,
+    "**/*.pfx": false,
+    "**/secrets/**": false,
+    "**/.npmrc": false,
+    "**/.vscode/settings.json": false,
+    "**/.claude/settings*.json": false,
+    "**/.pre-commit-config.yaml": false,
+    "**/.github/workflows/**": false,
+    // Vendored upstream payload, updated only with `npx impeccable update`
+    // (ADR 0002) — a hand edit here silently breaks the next update.
+    "**/.claude/skills/impeccable/**": false
+  },
+
+  // ── 3. Discovery ─────────────────────────────────────────────────────────
+  // Keeps secret files out of search, the file_search tool and the workspace
+  // index. files.exclude would be stronger but also hides them from the
+  // Explorer, so it is deliberately not used here.
+  "search.exclude": {
+    "**/.env*": true,
+    "**/*.pem": true,
+    "**/*.key": true,
+    "**/*.p12": true,
+    "**/*.pfx": true,
+    "**/secrets": true
+  },
+
+  // Gives .env files a language id, so the completion rule below covers them.
+  "files.associations": {
+    "**/.env*": "ini"
+  },
+
+  // No inline completions in the file types that carry credentials.
+  "github.copilot.enable": {
+    "*": true,
+    "ini": false,
+    "properties": false,
+    "plaintext": false,
+    "scminput": false
+  },
+
+  // ── 4. Sandbox ───────────────────────────────────────────────────────────
+  // macOS/Linux: restricts file system and network access for agent-executed
+  // commands. This is the only OS-level block on the Copilot side — the rules
+  // above are approval gates, not enforcement. If it breaks a build or test
+  // command, turning it off is a decision (record-decision), not a quick edit.
+  "chat.agent.sandbox.enabled": "on",
+
+  // ── 5. Privacy ───────────────────────────────────────────────────────────
+  // Never ship prompt/response bodies to telemetry.
+  "github.copilot.chat.otel.captureContent": false,
+  // PLACEHOLDER: your org, so private repos' chat sessions stay off GitHub.
+  "chat.sessionSync.excludeRepositories": ["TODO-your-org/*"]
 }

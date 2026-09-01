@@ -20,6 +20,8 @@ Code okuyor.
 | Hook script'leri | `.claude/hooks/*.sh`       | Tek script; manifest'i `.claude/settings.json` (Claude) + `.github/hooks/` (Copilot) |
 | MCP sunucuları | `.mcp.json` · `.vscode/mcp.json` | Aynı sunucular, her runtime kendi dosyasında |
 | Feature hafızası | `.ai/STATE.md` · `.ai/plans/` | Oturum aşan işin durumu ve planı |
+| Kalite kapısı  | `.pre-commit-config.yaml`    | git, commit anında — ajandan bağımsız |
+| İzin / gizlilik | `.vscode/settings.json` · `.claude/settings.json` | Her runtime kendi dosyasında, aynı politika |
 
 ## Şablonlar
 
@@ -60,6 +62,67 @@ ancak *kurduğu şeyden* doldurur. Kararlar aynı oturumda ADR'ye yazılır.
 
 Sonrasında: `TODO(confirm)` maddelerini ekiple gözden geçir, ADR 0001'i imzala,
 bir dosyayı düzenleyip hook'ların gerçekten ateşlediğini gör.
+
+## Lint kapısı — projede yoksa nasıl geliyor
+
+Üç an var, üçü farklı soruyu çözüyor. Karışan yer genelde 1 ile 3'ün farkı:
+**script dosyayı koyar, ajan yığına uydurur.**
+
+1. **`start.py` kopyalar.** `.pre-commit-config.yaml` — frontend'de ayrıca
+   `eslint.config.js`, python'da `requirements-dev.txt` — depoya yazılır,
+   **yalnız o dosya orada yoksa**. Varsa elle yazılmış hâli kazanır, çıktıdaki
+   "left untouched" listesinde görünür. Yani "yoksa ekle" davranışı kopyalamanın
+   kendisinde.
+2. **`start.py` raporlar.** Kopyalamadan sonra bir `lint readiness` bloğu basar:
+   `pre-commit` PATH'te mi, `.git/hooks/pre-commit` bağlı mı, `pyproject.toml`'da
+   `[tool.ruff]` var mı, `package.json`'da `lint` script'i ya da husky izi var mı.
+   **Hiçbir şey kurmaz.** Etkileşimli modda tek bir soru sorar
+   (`run pre-commit install now? [y/N]`) ve yalnız açık `y` ile çalıştırır —
+   `.git/hooks/` altına izinsiz yazmak, ajandan istediğimiz davranışın tersi olurdu.
+3. **Bootstrap prompt'u uyarlar.** Asıl karar burada, çünkü yığını *okumak*
+   gerekiyor. Prompt ajana üç durumu ayırtıyor:
+   - **(a) depoda lint yoktu** → gelen config artık kurulumun kendisi:
+     `[tool.ruff]`/`[tool.pylint]` bloğu **var olan** `pyproject.toml`'a eklenir
+     (şablon bilerek `pyproject.toml` taşımıyor, ezmesin diye),
+     `eslint.config.js` TypeScript/Next.js'e uyarlanır, `rev:` pin'leri kurulu
+     sürümlerle eşitlenir. Sonra `pre-commit run --all-files` **bir kez** koşulur:
+     eski kodun patlaması beklenen şey, o yüzden sayı olarak *raporlanır* —
+     sessizce toplu format atılmaz, kural gevşetilmez. Uymayan bir kural config
+     düzenlemesi değil, ADR konusudur.
+   - **(b) depoda zaten lint vardı** → onlarınki kalır. `.pre-commit-config.yaml`
+     onların komutlarını çağıracak şekilde yeniden yazılır, kopya hook'lar silinir.
+     Kapının tek bir tanımı olur.
+   - **(c) husky / lint-staged vardı** → iki kapı bir kapıdan kötü: ya husky
+     `pre-commit run` çağırır, ya şablonunki silinir. Ajan hangisini seçtiğini
+     söyler.
+4. **Sonrasında kapı ayakta kalır.** `AGENTS.md` → Commands'ta
+   `pre-commit run --all-files`, `run-quality-gates` skill'inde **Gate 0**.
+   `--no-verify` yok.
+
+Her klonda bir kez: `pip install pre-commit && pre-commit install`. Bunu README'ye
+ve `manual-actions.md`'ye yazmak bootstrap adımının işi.
+
+## Gizlilik ve izinler
+
+Üç katman var ve üçü farklı şeyi garanti ediyor — hangisinin ne yaptığını
+bilmeden birine güvenmek asıl risk:
+
+| Katman | Nerede | Ne yapar |
+| --- | --- | --- |
+| **Keşif** | `search.exclude`, `files.associations`, `github.copilot.enable`, `.gitignore` | Sır dosyalarını aramadan, workspace index'inden ve inline completion'dan çıkarır. Hedefli bir okumayı **durdurmaz** |
+| **Eylem** | `chat.tools.terminal.autoApprove`, `chat.tools.edits.autoApprove`, `chat.agent.sandbox.enabled`, `permissions.deny` | Komutta ve düzenlemede onay kapısı. **Claude Code**'da `Read()`/`Edit()` deny gerçek blok — dosya araçlarını *ve* Claude Code'un tanıdığı `cat`/`head`/`tail`/`sed` komutlarını kapsıyor. Sandbox, iki tarafta da tek OS düzeyi blok |
+| **Prompt** | Golden rule: "sırlar okunmaz, yazdırılmaz, yapıştırılmaz" | Diğer ikisinin kapatamadığını kapatır |
+
+Deny listesi neden "bütün `.ini`'ler kapalı" değil: **deny kuralı istisna kabul
+etmiyor.** `Read(**/*.ini)` yazarsan `alembic.ini`, `pytest.ini` ve `setup.cfg` de
+kapanır, geri açmanın yolu yoktur — `db-migration` skill'i o gün çalışmaz. O yüzden
+liste cerrahi: `.env*`, anahtar/sertifika, `secrets/**`, `~/.ssh`, `~/.aws`,
+`default.ini`, `config/*.ini`.
+
+**Dürüst sınır:** GitHub'ın content exclusion özelliği Copilot'ın **agent ve edit
+modlarında uygulanmıyor** ve Business/Enterprise istiyor. Yani Copilot tarafında
+dosya okumaya kesin bir blok yok; oradaki katman onay + keşif + prompt. Hiç
+okunmaması gereken bir sır workspace'te değil, vault'ta durmalı.
 
 ## Skill'ler
 
@@ -124,6 +187,7 @@ biri kuruldu**, diğerlerinden kod değil fikir alındı.
 | Proje | Karar | Neden |
 | --- | --- | --- |
 | **Impeccable** | kuruldu | Tasarım kalitesi boşluğunu dolduran tek aday; 59 deterministik kural LLM'siz koşuyor, yani hook ve CI'a bağlanabiliyor. `.claude/skills/impeccable/`, ADR 0002 |
+| **Karpathy skills** ([multica-ai](https://github.com/multica-ai/andrej-karpathy-skills)) | fikri alındı | Dört prensipten üçü Golden Rules'da zaten daha ayrıntılı karşılanıyordu: *Simplicity First* → kural #4'ün merdiveni, *Goal-Driven Execution* → kural #2/#3 + `implement-task`'ın "kanıtı adlandıramıyorsan görev hazır değil" adımı. Gerçek boşluk iki maddeydi ve işlendi: alternatifleri sunma/itiraz kural #1'e, **cerrahi değişiklik testi** (değişen her satır isteğe kadar izlenebilmeli, komşu kodu düzeltme, orphan'ını temizle) kural #4'e. Skill/eklenti olarak kurulmadı — `AGENTS.md`'nin yanında ikinci bir doğruluk kaynağı olurdu (GSD Core ile aynı gerekçe) |
 | **Ponytail** | fikri alındı | Eklentisi `copilot-instructions.md`'ye kural yazıyor; o dosya bizde bilinçli olarak yalnız işaretçi. Merdiven altın kural #4'e, kök-neden kural #5'e yazıldı |
 | **Superpowers** | yazım deseni alındı, **eklenti kurulmadı** | Değeri skill'lerinde değil skill yazma biçiminde: iron law + red flags + ajanın bahanelerini önceden çürüten tablo — `run-quality-gates`, `debug-issue`, `self-review` bu kalıpla yazıldı. Eklentinin kendisi GSD ile aynı slotu doldurur, TDD'yi kültür olarak şart koşar (testten önce yazılmış kodu sildirir) ve her isteğe skill çağrısı bindirir |
 | **GSD Core** | mekanizması alındı, framework kurulmadı | 70+ skill, kendi installer'ı ve kendi `.planning/` ağacı geliyor; kurulunca `AGENTS.md` ile ikinci bir doğruluk kaynağı oluşuyor. Değerli üç mekanizması `plan-feature` skill'ine sığdı |

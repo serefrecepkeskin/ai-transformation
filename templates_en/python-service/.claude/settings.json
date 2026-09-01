@@ -14,24 +14,62 @@
       "Bash(mypy:*)",
       "Bash(pytest:*)",
       "Bash(uv run:*)",
-      "Bash(uv sync)"
+      "Bash(uv sync)",
+      "Bash(pre-commit run:*)"
     ],
-    "ask": ["Bash(alembic upgrade:*)", "Bash(alembic downgrade:*)", "Bash(psql:*)"],
-    "deny": ["Bash(rm -rf:*)", "Bash(git push --force:*)", "Bash(git reset --hard:*)"]
+    "ask": [
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(alembic upgrade:*)",
+      "Bash(alembic downgrade:*)",
+      "Bash(psql:*)"
+    ],
+    "deny": [
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(**/*.p12)",
+      "Read(**/*.pfx)",
+      "Read(secrets/**)",
+      "Read(**/*credential*)",
+      "Read(**/.npmrc)",
+      "Read(**/.pypirc)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.config/gcloud/**)",
+      "Read(~/.kube/config)",
+      "Read(default.ini)",
+      "Read(config/*.ini)",
+      "Edit(.env)",
+      "Edit(.env.*)",
+      "Edit(secrets/**)",
+      "Bash(rm -rf:*)",
+      "Bash(git push --force:*)",
+      "Bash(git reset --hard:*)"
+    ]
   },
   "hooks": {
     "PostToolUse": [
       {
         "matcher": "Edit|Write",
         "hooks": [
-          { "type": "command", "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/format-changed.sh", "timeout": 60 }
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/format-changed.sh",
+            "timeout": 60
+          }
         ]
       }
     ],
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/remind-docs.sh", "timeout": 30 }
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/remind-docs.sh",
+            "timeout": 30
+          }
         ]
       }
     ]

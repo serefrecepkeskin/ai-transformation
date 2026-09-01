@@ -7,19 +7,22 @@
     python3 start.py --prompt-only            # just print the prompt
 
 Copies the template's scaffolding into the target repo without overwriting
-anything that is already there (--force overrides). Stdlib only, no install.
+anything that is already there (--force overrides), then reports what the
+commit-time lint gate still needs. Stdlib only, no install.
 """
 
 import argparse
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 TEMPLATES = sorted(p.name for p in HERE.iterdir() if p.is_dir() and (p / "AGENTS.md").exists())
 MANIFESTS = ("package.json", "pyproject.toml", "setup.py", "go.mod", "Cargo.toml")
+LINT_FILES = (".pre-commit-config.yaml", "eslint.config.js", "requirements-dev.txt")
 SCAFFOLD = {".ai", ".claude", ".github", ".vscode", ".impeccable", "docs", "tasks",
-            "AGENTS.md", "CLAUDE.md", ".mcp.json", ".git"}
+            "AGENTS.md", "CLAUDE.md", ".mcp.json", ".git", *LINT_FILES}
 
 
 def copy_tree(src: Path, dst: Path, force: bool) -> tuple[list[str], list[str]]:
@@ -49,6 +52,68 @@ def looks_new(target: Path) -> bool:
     code = [p for p in target.rglob("*")
             if p.is_file() and p.relative_to(target).parts[0] not in SCAFFOLD]
     return len(code) < 5
+
+
+def read_text(path: Path) -> str:
+    """File contents, or "" — a config we cannot read is a config we cannot judge."""
+    try:
+        return path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return ""
+
+
+def report_lint_readiness(target: Path, written: set[str], skipped: set[str]) -> None:
+    """Say what the commit-time gate still needs. Reads only; installs nothing.
+
+    The template ships the config files. Whether the toolchain is installed and
+    whether the git hook is wired are the two questions a script can answer;
+    whether the config matches this repo's real stack is the agent's job, via
+    the bootstrap prompt.
+    """
+    lines = []
+    for name in LINT_FILES:
+        if name in written:
+            lines.append(f"  ok   {name:<24} written by this install")
+        elif name in skipped:
+            lines.append(f"  ok   {name:<24} already present, left untouched")
+    if not lines:
+        return
+
+    if shutil.which("pre-commit"):
+        lines.append(f"  ok   {'pre-commit':<24} on PATH")
+    else:
+        lines.append(f"  todo {'pre-commit':<24} not installed  ->  pip install pre-commit")
+
+    if (target / ".git" / "hooks" / "pre-commit").exists():
+        lines.append(f"  ok   {'.git/hooks/pre-commit':<24} wired")
+    else:
+        lines.append(f"  todo {'.git/hooks/pre-commit':<24} not wired      ->  pre-commit install")
+
+    pyproject = read_text(target / "pyproject.toml")
+    if pyproject and "[tool.ruff]" not in pyproject:
+        lines.append("  ask  pyproject.toml has no [tool.ruff] section — the bootstrap prompt adds it")
+
+    package = read_text(target / "package.json")
+    if package:
+        if '"lint"' not in package:
+            lines.append('  ask  package.json has no "lint" script — the bootstrap prompt adds it')
+        if "husky" in package or "lint-staged" in package:
+            lines.append("  ask  husky/lint-staged already here — the bootstrap prompt reconciles the two")
+
+    print("\nlint readiness")
+    print("\n".join(lines))
+
+
+def offer_precommit_install(target: Path) -> None:
+    """Interactive only, explicit yes only. `pre-commit install` writes into
+    .git/hooks/, and a setup script has no business doing that unasked."""
+    if not shutil.which("pre-commit"):
+        return
+    if (target / ".git" / "hooks" / "pre-commit").exists():
+        return
+    if input("\nrun `pre-commit install` now? [y/N] ").strip().lower() != "y":
+        return
+    subprocess.run(["pre-commit", "install"], cwd=target, check=False)
 
 
 def prompt_text(template: str, greenfield: bool = False) -> str:
@@ -83,6 +148,7 @@ def main() -> int:
         print(prompt_text(args.template or "<template>", args.new))
         return 0
 
+    interactive = not (args.template and args.target)
     template = args.template or ask("Template?", TEMPLATES)
     target = Path(args.target or input("Target repo path: ").strip()).expanduser().resolve()
 
@@ -109,6 +175,10 @@ def main() -> int:
             print(f"  · {path}")
         if len(skipped) > 20:
             print(f"  · … and {len(skipped) - 20} more")
+
+    report_lint_readiness(target, set(written), set(skipped))
+    if interactive:
+        offer_precommit_install(target)
 
     print("\n" + "=" * 72)
     print("NEXT: open the repo in your agent (Copilot agent mode or Claude Code)")

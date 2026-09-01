@@ -1,0 +1,54 @@
+# Commit-time quality gate. Same tools the agent runs in `run-quality-gates`,
+# enforced by git so a commit cannot skip them. pre-commit is a Python tool but
+# runs any command — no husky/lint-staged needed, and the same runner covers a
+# polyglot repo.
+#
+# TEMPLATE — the bootstrap prompt reconciles this with the repo's real stack
+# (the actual test command, TypeScript, an existing husky/lint-staged setup).
+# Delete a hook the repo genuinely does not need; say so in the ADR.
+#
+#   pip install pre-commit && pre-commit install   # once, per clone
+#   pre-commit run --all-files                     # full sweep
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      # Blocks a committed private key outright — the mechanical half of the
+      # "secrets are never read, printed or pasted" golden rule.
+      - id: detect-private-key
+      # .claude/skills/impeccable/ is a vendored upstream payload kept
+      # byte-for-byte so `npx impeccable update` stays a clean diff (ADR 0002).
+      - id: trailing-whitespace
+        exclude: \.(svg|lock)$|^\.claude/skills/impeccable/
+      - id: end-of-file-fixer
+        exclude: ^\.claude/skills/impeccable/
+      - id: check-yaml
+      - id: check-json
+        # tsconfig*.json is JSONC (comments allowed) — the strict parser fails.
+        exclude: ^tsconfig.*\.json$
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=2000]
+
+  - repo: local
+    hooks:
+      - id: eslint
+        name: eslint
+        entry: npx eslint --fix
+        language: system
+        files: \.(ts|tsx|js|jsx)$
+        exclude: ^\.claude/skills/impeccable/
+        require_serial: false
+
+      - id: vitest
+        name: vitest
+        entry: npx vitest run
+        language: system
+        # The runner gets no filenames — the whole suite runs every time.
+        # Needs node_modules installed. TODO(confirm): if the suite grows
+        # slow enough to hurt the commit loop, move it to `stages: [manual]`
+        # and keep it as a CI gate.
+        pass_filenames: false
+        always_run: true
+        require_serial: true

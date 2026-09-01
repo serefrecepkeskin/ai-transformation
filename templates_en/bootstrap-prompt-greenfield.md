@@ -66,7 +66,10 @@ Not an application — the smallest skeleton that makes every gate real:
 
 - the dependency manager initialized, the step-1 dependencies installed, and the
   **lockfile written**;
-- lint / format / type-check configured with the tools that were chosen;
+- lint / format / type-check configured with the tools that were chosen — the
+  template ships `.pre-commit-config.yaml` (and `eslint.config.js` /
+  `requirements-dev.txt` where it applies) as the starting point; adapt them to
+  the stack you just chose rather than writing a second gate beside them;
 - the one vertical slice from step 1, actually running;
 - one test over that slice — watch it fail before it passes, or you have not
   proven it tests anything.
@@ -113,6 +116,16 @@ Delete any skill that does not apply here, and say which and why.
 
 ## 6. Prove the guardrails, do not assume them
 
+There is no legacy code here, so the gate can be green from commit one — and it
+must be, because everything written after this is measured against it.
+
+- Finish the lint config you scaffolded in step 2: `[tool.ruff]` (and
+  `[tool.pylint]`) in the `pyproject.toml` you created, or `eslint.config.js`
+  adapted to the framework you chose. Pin every `rev:` in
+  `.pre-commit-config.yaml` to the version you actually installed.
+- `pip install pre-commit && pre-commit install`, then
+  `pre-commit run --all-files` — green, on the skeleton, before you report. A
+  gate that has never run is not a gate.
 - `node -v` — the design hook needs 22+.
 - Are `prettier` / `eslint` (frontend) or `ruff` (python) really installed? The
   hooks call them and exit silently when they are absent.
@@ -126,7 +139,8 @@ Whatever a human still has to install, decide or grant goes into
 ## 7. Report back
 
 1. **Decided** — the filled stack table, and who decided it.
-2. **Built** — what runs now, with the command output that proves it.
+2. **Built** — what runs now, with the command output that proves it,
+   including `pre-commit run --all-files` green.
 3. **`TODO(confirm)`** — every open question, and who should answer it.
 4. **ADRs written** — number and title.
 5. **Deleted / not applicable** — what you removed and why.

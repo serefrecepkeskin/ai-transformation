@@ -20,7 +20,7 @@
     "git add": true,
     "/^npm run (lint|test|typecheck|format:check|build)\\b/": true,
     "/^npx (prettier|eslint|tsc|vitest|playwright)\\b/": true,
-    "/^pre-commit run\\b/": true,
+    "/^npx (lint-staged|husky)\\b/": true,
 
     // reading secrets
     "/\\b(cat|less|more|head|tail|bat|strings)\\b.*\\.(env|pem|key|p12|pfx)\\b/": false,
@@ -54,7 +54,8 @@
     "**/.npmrc": false,
     "**/.vscode/settings.json": false,
     "**/.claude/settings*.json": false,
-    "**/.pre-commit-config.yaml": false,
+    "**/.husky/**": false,
+    "**/.lintstagedrc*": false,
     "**/.github/workflows/**": false,
     // Vendored upstream payload, updated only with `npx impeccable update`
     // (ADR 0002) — a hand edit here silently breaks the next update.

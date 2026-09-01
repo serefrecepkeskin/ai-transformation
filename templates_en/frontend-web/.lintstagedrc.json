@@ -1,0 +1,4 @@
+{
+  "//": "Runs on staged files only — the full-tree equivalent is `npm run lint`. The template ships no package.json, so this config lives in its own file; the bootstrap prompt may fold it into package.json instead. TODO(confirm): add prettier once it is actually installed.",
+  "*.{js,jsx,ts,tsx}": "eslint --fix"
+}

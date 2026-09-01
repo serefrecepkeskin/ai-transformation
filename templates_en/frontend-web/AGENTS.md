@@ -80,8 +80,8 @@ PLACEHOLDER — filled from package.json scripts.
 - `npm run dev` — dev server (TODO(confirm) port)
 - `npm run typecheck` · `npm run lint` · `npm run format:check` · `npm run test`
 - `npm run build`
-- `pre-commit install` — once per clone; wires the commit-time gate
-- `pre-commit run --all-files` — the same gate over the whole tree
+- `npm install` — also wires the commit-time gate (husky, via `prepare`)
+- `npx lint-staged` — the gate over staged files; `npm run lint` over the tree
 
 ## Knowledge Base
 
@@ -132,7 +132,7 @@ Code Copilot. Invoke one by name (`/verify-ui`) or let the agent pick it.
 Guardrails: hooks auto-format changed files, run the design detector on edited
 UI files, and remind on docs drift (`.claude/hooks/`, wired up in
 `.claude/settings.json` for Claude Code and `.github/hooks/` for Copilot);
-`.pre-commit-config.yaml` runs the same gate at commit time; safe commands are
+`.husky/pre-commit` runs the same gate at commit time; safe commands are
 pre-approved and secret files denied in both settings files — see
 [conventions.md](docs/engineering/conventions.md#automated-guardrails-copilot-hooks--approvals)
 for what each layer really enforces.

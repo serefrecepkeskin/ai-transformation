@@ -67,9 +67,11 @@ Not an application — the smallest skeleton that makes every gate real:
 - the dependency manager initialized, the step-1 dependencies installed, and the
   **lockfile written**;
 - lint / format / type-check configured with the tools that were chosen — the
-  template ships `.pre-commit-config.yaml` (and `eslint.config.js` /
-  `requirements-dev.txt` where it applies) as the starting point; adapt them to
-  the stack you just chose rather than writing a second gate beside them;
+  template ships the commit-time gate for its own ecosystem —
+  `.pre-commit-config.yaml` + `requirements-dev.txt` (python, pip) or
+  `.husky/pre-commit` + `.lintstagedrc.json` + `eslint.config.js` (frontend,
+  npm). Adapt those to the stack you just chose rather than writing a second
+  gate beside them;
 - the one vertical slice from step 1, actually running;
 - one test over that slice — watch it fail before it passes, or you have not
   proven it tests anything.
@@ -123,9 +125,11 @@ must be, because everything written after this is measured against it.
   `[tool.pylint]`) in the `pyproject.toml` you created, or `eslint.config.js`
   adapted to the framework you chose. Pin every `rev:` in
   `.pre-commit-config.yaml` to the version you actually installed.
-- `pip install pre-commit && pre-commit install`, then
-  `pre-commit run --all-files` — green, on the skeleton, before you report. A
-  gate that has never run is not a gate.
+- Wire the hook and prove it fires on the skeleton, before you report — python:
+  `pip install pre-commit && pre-commit install`, then
+  `pre-commit run --all-files`; frontend: `npm i -D husky lint-staged`,
+  `npm pkg set scripts.prepare=husky`, `npm install`, then a throwaway staged
+  change so the hook actually runs. A gate that has never run is not a gate.
 - `node -v` — the design hook needs 22+.
 - Are `prettier` / `eslint` (frontend) or `ruff` (python) really installed? The
   hooks call them and exit silently when they are absent.
@@ -140,7 +144,7 @@ Whatever a human still has to install, decide or grant goes into
 
 1. **Decided** — the filled stack table, and who decided it.
 2. **Built** — what runs now, with the command output that proves it,
-   including `pre-commit run --all-files` green.
+   including the commit hook firing green.
 3. **`TODO(confirm)`** — every open question, and who should answer it.
 4. **ADRs written** — number and title.
 5. **Deleted / not applicable** — what you removed and why.

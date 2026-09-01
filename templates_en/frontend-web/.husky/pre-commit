@@ -1,0 +1,37 @@
+# Commit-time quality gate. Wired by husky: `npm install` runs the `prepare`
+# script, which points git's core.hooksPath at .husky/ — no separate install
+# step, no toolchain outside npm.
+#
+# TEMPLATE — the bootstrap prompt reconciles this with the repo's real scripts
+# (test runner, TypeScript, an existing hook). Skipping it with --no-verify is
+# not a decision you get to make on your own.
+
+# ── Guard 1: never let a private key into history ────────────────────────
+if git diff --cached --diff-filter=ACM -U0 | grep -qE '^\+.*BEGIN [A-Z ]*PRIVATE KEY'; then
+  echo "pre-commit: a private key is staged. Unstage it, and rotate it — it is compromised." >&2
+  exit 1
+fi
+
+# ── Guard 2: an oversized file here is almost always a mistake ───────────
+max_kb=2000
+git diff --cached --name-only --diff-filter=ACM | while IFS= read -r file; do
+  [ -f "$file" ] || continue
+  kb=$(( $(wc -c < "$file" | tr -d ' ') / 1024 ))
+  if [ "$kb" -gt "$max_kb" ]; then
+    echo "pre-commit: $file is ${kb}KB, over the ${max_kb}KB limit. Commit it deliberately or .gitignore it." >&2
+    exit 1
+  fi
+done || exit 1
+
+# ── Lint the staged files, then run the suite ────────────────────────────
+if [ ! -x node_modules/.bin/lint-staged ]; then
+  echo "pre-commit: lint-staged is missing. Run: npm i -D husky lint-staged" >&2
+  exit 1
+fi
+
+npx --no-install lint-staged || exit 1
+
+# The test runner gets no filenames — the whole suite runs every time.
+# TODO(confirm): if the suite grows slow enough to hurt the commit loop, move
+# it to a pre-push hook and keep it as a CI gate.
+npx --no-install vitest run || exit 1

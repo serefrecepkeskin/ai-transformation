@@ -8,7 +8,7 @@
 
 - TypeScript strict everywhere; `any` only with a written justification.
 - Formatting/lint: ESLint, configured in `eslint.config.js` (flat config);
-  the same command runs in `.pre-commit-config.yaml`. TODO(confirm):
+  the same command runs from `.lintstagedrc.json` at commit time. TODO(confirm):
   prettier, and whether TypeScript rules are on. A rule the linter enforces
   does not belong in this file.
 - Commits & PRs: English conventional-commit title, Turkish body/description —
@@ -54,11 +54,12 @@
   `docs/` didn't (drift), or dependencies changed without an ADR. Non-blocking.
 - `.github/workflows/copilot-setup-steps.yml` — preinstalls dependencies in the
   Copilot coding agent's environment.
-- `.pre-commit-config.yaml` — the commit-time gate: the same lint/format/test
-  tools, enforced by git instead of by the agent remembering. `pip install
-  pre-commit && pre-commit install` once per clone; `pre-commit run --all-files`
-  for a full sweep. `detect-private-key` and the large-file limit are the
-  mechanical half of the secrets rule.
+- `.husky/pre-commit` + `.lintstagedrc.json` — the commit-time gate: the same
+  lint and test commands, enforced by git instead of by the agent remembering.
+  `npm install` wires it (husky's `prepare` script points `core.hooksPath` at
+  `.husky/`), so there is no second toolchain to install. The private-key and
+  large-file guards at the top of the hook are the mechanical half of the
+  secrets rule.
 - `.vscode/settings.json` (Copilot) and `.claude/settings.json` (Claude Code) —
   what the agent may run and touch. Both files carry a comment on every block;
   read them before changing one. Never set `chat.tools.global.autoApprove`
@@ -82,6 +83,6 @@ Copilot's agent or edit modes and needs Business/Enterprise, so on the Copilot
 side there is no hard block on reading a file. A secret that must never be
 readable belongs in a vault, not in the workspace.
 
-- The guardrail chain is: hooks → pre-commit → local quality gates → CI →
-  review. Hooks and pre-commit are convenience and early warning; gates, CI and
+- The guardrail chain is: agent hooks → the commit hook → local quality gates →
+  CI → review. The first two are convenience and early warning; gates, CI and
   review remain the enforcement.

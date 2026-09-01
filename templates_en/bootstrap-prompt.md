@@ -55,10 +55,17 @@ Delete any skill that does not apply to this repo, and say which and why.
 
 ## 4. Wire up the quality gate
 
-`start.py` copied `.pre-commit-config.yaml` — plus `eslint.config.js` or
-`requirements-dev.txt` where the template has one — **only where the repo did
-not already have that file**. So first find out which case you are in, then do
-that case's work. There must end up being exactly one definition of the gate.
+Each template brings its own ecosystem's runner, so there is no second
+toolchain to install:
+
+| Template | Commit-time runner | Files it shipped | Wired by |
+| --- | --- | --- | --- |
+| `python-service` | `pre-commit` (pip) | `.pre-commit-config.yaml`, `requirements-dev.txt` | `pre-commit install` |
+| `frontend-web` | `husky` + `lint-staged` (npm) | `.husky/pre-commit`, `.lintstagedrc.json`, `eslint.config.js` | `npm install`, via the `prepare` script |
+
+`start.py` copied those files **only where the repo did not already have them**.
+So first find out which case you are in, then do that case's work. There must
+end up being exactly one definition of the gate.
 
 **(a) The repo had no lint setup.** The shipped config is now the setup; make
 it true for this repo.
@@ -69,34 +76,42 @@ it true for this repo.
   `target-version` from what the code already does, not from your taste. Pin
   each `rev:` in `.pre-commit-config.yaml` to the version in
   `requirements-dev.txt`.
-- Frontend: adapt `eslint.config.js` to the real stack — TypeScript needs
-  `typescript-eslint`, Next.js needs `eslint-config-next`; set
-  `settings.react.version` from the lockfile; add a `"lint"` script to
-  `package.json` if there is none.
-- Then run `pre-commit run --all-files` **once** and read all of it. Existing
+- Frontend: `npm i -D husky lint-staged`, then
+  `npm pkg set scripts.prepare=husky` and `npm install` so the hook is actually
+  wired (check that `.husky/_` appeared). Adapt `eslint.config.js` to the real
+  stack — TypeScript needs `typescript-eslint`, Next.js needs
+  `eslint-config-next`; set `settings.react.version` from the lockfile; add a
+  `"lint"` script to `package.json` if there is none; widen the
+  `.lintstagedrc.json` glob if the repo is `.ts`/`.tsx`. If the test command is
+  not `vitest run`, fix the last line of `.husky/pre-commit`.
+- Then run the whole-tree sweep **once** — `pre-commit run --all-files`, or
+  `npm run lint` — and read all of it. Existing
   code will fail; that is a finding to report, not something to fix in this
   pass. Report the counts per hook. Do **not** mass-reformat the repo, and do
   **not** loosen a rule to get the count to zero — a rule that genuinely does
   not fit is a `record-decision`, not a config edit.
 
 **(b) The repo already had lint config** (eslint, ruff, flake8, prettier…).
-Theirs wins and is untouched. Rewrite `.pre-commit-config.yaml` to call their
-existing commands, and delete the hooks that duplicate what they already run.
-Say what you kept and what you dropped.
+Theirs wins and is untouched. Rewrite the shipped gate to call their existing
+commands, and delete what duplicates it. Say what you kept and what you dropped.
 
-**(c) The repo already had husky / lint-staged / another commit hook.** Two
-gates is worse than one. Either point the existing hook at `pre-commit run`, or
-delete the shipped `.pre-commit-config.yaml`. Pick one and say why.
+**(c) The repo already had a commit hook** — its own husky setup, lint-staged
+config in `package.json`, simple-git-hooks, or a hand-written
+`.git/hooks/pre-commit`. Two gates is worse than one. Merge the shipped checks
+into theirs and delete the template's copy, or replace theirs — pick one, say
+why, and make sure only one hook ends up running.
 
 ## 5. Check the prerequisites, do not assume them
 
 Run the checks, read the output, and write what is actually missing into
 `docs/engineering/manual-actions.md`:
 
-- `pre-commit --version` and `ls .git/hooks/pre-commit` — if either is missing
-  the gate is not installed at all, whatever the config file says. The fix is
-  `pip install pre-commit && pre-commit install`, once per clone, and it goes
-  in the README so the next person runs it too.
+- Is the hook actually wired? Python: `pre-commit --version` and
+  `ls .git/hooks/pre-commit`; frontend: `ls .husky/_` and
+  `git config core.hooksPath`. A config file on disk proves nothing on its own.
+  The fix is `pip install pre-commit && pre-commit install` or `npm install`
+  with the `prepare` script set — and it goes in the README so the next person
+  gets it too.
 - Node major version (`node -v`) — the design hook needs 22+.
 - Are `prettier` / `eslint` (frontend) or `ruff` (python) actually installed?
   The hooks call them and exit silently when they are absent.
@@ -110,7 +125,8 @@ Finish with a short report, in this order:
 
 1. **Filled from evidence** — one line per file, naming the source you used.
 2. **Quality gate** — which case (a/b/c) applied, what you changed, and the
-   first `pre-commit run --all-files` output, per hook.
+   first whole-tree sweep's output, per check. Prove the hook fires: make a
+   throwaway staged change and let it run.
 3. **`TODO(confirm)`** — every open question, and who should answer it.
 4. **Deleted / not applicable** — what you removed and why.
 5. **Prerequisites missing** — what a human has to install or decide.

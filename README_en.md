@@ -21,7 +21,7 @@ and Claude Code.
 | Hook scripts     | `.claude/hooks/*.sh`                  | One script; manifests in `.claude/settings.json` + `.github/hooks/` |
 | MCP servers      | `.mcp.json` · `.vscode/mcp.json`      | Same servers, one file per runtime |
 | Feature memory   | `.ai/STATE.md` · `.ai/plans/`         | Cross-session state and plans     |
-| Quality gate     | `.pre-commit-config.yaml`             | git, at commit time — independent of the agent |
+| Quality gate     | `.pre-commit-config.yaml` (pip) · `.husky/pre-commit` (npm) | git, at commit time — independent of the agent |
 | Permissions / privacy | `.vscode/settings.json` · `.claude/settings.json` | Same policy, each runtime in its own file |
 
 ## Templates
@@ -70,40 +70,63 @@ one edit to confirm the hooks actually fire.
 Three moments, three different questions. The one that usually gets confused is
 1 versus 3: **the script puts the file there, the agent makes it fit the stack.**
 
-1. **`start.py` copies.** `.pre-commit-config.yaml` — plus `eslint.config.js`
-   (frontend) and `requirements-dev.txt` (python) — is written into the repo
-   **only if that file isn't already there**. If it is, the repo's own version
+Each template brings **its own ecosystem's runner**, so there is never a second
+toolchain to install:
+
+| Template | Commit-time runner | Files it ships | Wired by |
+| --- | --- | --- | --- |
+| `python-service` | `pre-commit` (pip) | `.pre-commit-config.yaml`, `requirements-dev.txt` | `pre-commit install` |
+| `frontend-web` | `husky` + `lint-staged` (npm) | `.husky/pre-commit`, `.lintstagedrc.json`, `eslint.config.js` | `npm install`, via the `prepare` script |
+
+> `husky` is the ~2KB npm package that makes git hooks shareable: `.git/` is not
+> cloned, so a hook cannot live in the repo on its own. husky keeps the scripts
+> in a versioned `.husky/` directory and points git's `core.hooksPath` at it,
+> from the `prepare` script that `npm install` runs — so a new teammate does
+> nothing extra. `lint-staged` runs a command over staged files only. Python's
+> `pre-commit` has no official npm distribution; that is why the frontend
+> template does not borrow it.
+
+1. **`start.py` copies.** The template's own gate files are written into the repo
+   **only if they aren't already there**. If they are, the repo's own version
    wins and shows up under "left untouched". So "add it if missing" is the copy
    step itself, not extra logic.
-2. **`start.py` reports.** After copying it prints a `lint readiness` block: is
-   `pre-commit` on PATH, is `.git/hooks/pre-commit` wired, does `pyproject.toml`
-   have a `[tool.ruff]` section, does `package.json` have a `lint` script or a
-   husky/lint-staged trace. **It installs nothing.** In interactive mode it asks
-   exactly one question (`run pre-commit install now? [y/N]`) and acts only on an
-   explicit `y` — writing into `.git/hooks/` unasked is the opposite of what we
-   demand from the agent.
+2. **`start.py` reports.** After copying it prints a `lint readiness` block and
+   asks the right questions for whichever runner landed: on python, is
+   `pre-commit` on PATH and is `.git/hooks/pre-commit` wired; on frontend, is
+   `lint-staged` installed, does `package.json` have the `prepare` script, has
+   `core.hooksPath` moved to `.husky/`. **It installs nothing.** Only on the
+   pre-commit side, and only in interactive mode, it asks one question and acts
+   solely on an explicit `y` — writing into `.git/hooks/` unasked is the opposite
+   of what we demand from the agent. There is no such question on the husky side,
+   because `npm install` already wires it.
 3. **The bootstrap prompt adapts.** This is where the real decision lives,
    because it takes *reading* the stack. The prompt splits it into three cases:
    - **(a) the repo had no lint setup** → the shipped config becomes the setup:
      `[tool.ruff]`/`[tool.pylint]` goes into the **existing** `pyproject.toml`
      (the template deliberately ships none, so it can't overwrite theirs),
-     `eslint.config.js` is adapted to TypeScript/Next.js, every `rev:` is pinned
-     to the installed version. Then `pre-commit run --all-files` runs **once**:
+     every `rev:` is pinned to the installed version. On the frontend,
+     `npm i -D husky lint-staged` + `npm pkg set scripts.prepare=husky` +
+     `npm install` actually wires the hook, and `eslint.config.js` is adapted to
+     TypeScript/Next.js. Then the whole-tree sweep (`pre-commit run --all-files`
+     or `npm run lint`) runs **once**:
      legacy code failing is expected, so it is *reported* as counts — no silent
      mass reformat, no loosened rule. A rule that genuinely doesn't fit is an
      ADR, not a config edit.
-   - **(b) the repo already had lint config** → theirs wins.
-     `.pre-commit-config.yaml` is rewritten to call their commands and the
-     duplicate hooks are deleted. One definition of the gate.
-   - **(c) husky / lint-staged was already there** → two gates are worse than
-     one: either husky calls `pre-commit run`, or the shipped config goes. The
-     agent says which.
-4. **Then it stays up.** `pre-commit run --all-files` is in the `AGENTS.md`
-   Commands section and is **Gate 0** in the `run-quality-gates` skill. No
+   - **(b) the repo already had lint config** → theirs wins. The shipped gate is
+     rewritten to call their commands and the duplicate checks are deleted. One
+     definition of the gate.
+   - **(c) the repo already had a commit hook** — its own husky setup,
+     lint-staged in `package.json`, simple-git-hooks, a hand-written
+     `.git/hooks/pre-commit` → two gates are worse than one. The shipped checks
+     are merged into theirs and the template's copy goes, or the other way round.
+     The agent says which, and exactly one hook ends up running.
+4. **Then it stays up.** The gate's command is in the `AGENTS.md` Commands
+   section and its whole-tree equivalent is in the `run-quality-gates` skill. No
    `--no-verify`.
 
-Once per clone: `pip install pre-commit && pre-commit install`. Writing that into
-the README and `manual-actions.md` is the bootstrap step's job.
+Once per clone: `pip install pre-commit && pre-commit install` on python, just
+`npm install` on the frontend. Writing that into the README and
+`manual-actions.md` is the bootstrap step's job.
 
 ## Privacy and permissions
 

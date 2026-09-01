@@ -19,7 +19,7 @@
       "Bash(npx tsc:*)",
       "Bash(npx vitest:*)",
       "Bash(npx playwright:*)",
-      "Bash(pre-commit run:*)"
+      "Bash(npx lint-staged:*)"
     ],
     "ask": [
       "Bash(curl:*)",

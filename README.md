@@ -20,7 +20,7 @@ Code okuyor.
 | Hook script'leri | `.claude/hooks/*.sh`       | Tek script; manifest'i `.claude/settings.json` (Claude) + `.github/hooks/` (Copilot) |
 | MCP sunucuları | `.mcp.json` · `.vscode/mcp.json` | Aynı sunucular, her runtime kendi dosyasında |
 | Feature hafızası | `.ai/STATE.md` · `.ai/plans/` | Oturum aşan işin durumu ve planı |
-| Kalite kapısı  | `.pre-commit-config.yaml`    | git, commit anında — ajandan bağımsız |
+| Kalite kapısı  | `.pre-commit-config.yaml` (pip) · `.husky/pre-commit` (npm) | git, commit anında — ajandan bağımsız |
 | İzin / gizlilik | `.vscode/settings.json` · `.claude/settings.json` | Her runtime kendi dosyasında, aynı politika |
 
 ## Şablonlar
@@ -68,39 +68,61 @@ bir dosyayı düzenleyip hook'ların gerçekten ateşlediğini gör.
 Üç an var, üçü farklı soruyu çözüyor. Karışan yer genelde 1 ile 3'ün farkı:
 **script dosyayı koyar, ajan yığına uydurur.**
 
-1. **`start.py` kopyalar.** `.pre-commit-config.yaml` — frontend'de ayrıca
-   `eslint.config.js`, python'da `requirements-dev.txt` — depoya yazılır,
-   **yalnız o dosya orada yoksa**. Varsa elle yazılmış hâli kazanır, çıktıdaki
+Her şablon **kendi ekosisteminin aracını** getiriyor; ikinci bir toolchain
+kurulmuyor:
+
+| Şablon | Commit-anı aracı | Gelen dosyalar | Neyle bağlanıyor |
+| --- | --- | --- | --- |
+| `python-service` | `pre-commit` (pip) | `.pre-commit-config.yaml`, `requirements-dev.txt` | `pre-commit install` |
+| `frontend-web` | `husky` + `lint-staged` (npm) | `.husky/pre-commit`, `.lintstagedrc.json`, `eslint.config.js` | `npm install` — `prepare` script'i üzerinden |
+
+> `husky`, git'in hook mekanizmasını paylaşılabilir yapan ~2KB'lık npm paketi:
+> `.git/` klonlanmadığı için hook repoda duramaz; husky script'leri versiyonlanan
+> `.husky/` klasöründe tutup git'in `core.hooksPath` ayarını oraya çeviriyor ve
+> bunu `npm install`'un çalıştırdığı `prepare` script'iyle yapıyor — yeni gelen
+> ekip üyesi fazladan hiçbir şey yapmıyor. `lint-staged` ise komutu yalnız staged
+> dosyalara koşuyor. Python'ın `pre-commit`'inin resmî npm dağıtımı yok;
+> frontend'e pip sokmamanın sebebi bu.
+
+1. **`start.py` kopyalar.** Şablonun kendi kapı dosyaları depoya yazılır,
+   **yalnız o dosya orada yoksa**. Varsa deponun kendi hâli kazanır ve çıktıdaki
    "left untouched" listesinde görünür. Yani "yoksa ekle" davranışı kopyalamanın
    kendisinde.
-2. **`start.py` raporlar.** Kopyalamadan sonra bir `lint readiness` bloğu basar:
-   `pre-commit` PATH'te mi, `.git/hooks/pre-commit` bağlı mı, `pyproject.toml`'da
-   `[tool.ruff]` var mı, `package.json`'da `lint` script'i ya da husky izi var mı.
-   **Hiçbir şey kurmaz.** Etkileşimli modda tek bir soru sorar
-   (`run pre-commit install now? [y/N]`) ve yalnız açık `y` ile çalıştırır —
-   `.git/hooks/` altına izinsiz yazmak, ajandan istediğimiz davranışın tersi olurdu.
+2. **`start.py` raporlar.** Kopyalamadan sonra bir `lint readiness` bloğu basar
+   ve hangi aracın indiğine göre doğru soruları sorar: python'da `pre-commit`
+   PATH'te mi ve `.git/hooks/pre-commit` bağlı mı; frontend'de `lint-staged`
+   kurulu mu, `package.json`'da `prepare` script'i var mı, `core.hooksPath`
+   `.husky/`'ye dönmüş mü. **Hiçbir şey kurmaz.** Yalnız pre-commit tarafında,
+   etkileşimli modda tek bir soru sorar ve açık `y` ile çalıştırır — `.git/hooks/`
+   altına izinsiz yazmak, ajandan istediğimiz davranışın tersi olurdu. husky
+   tarafında böyle bir soru yok, çünkü `npm install` zaten bağlıyor.
 3. **Bootstrap prompt'u uyarlar.** Asıl karar burada, çünkü yığını *okumak*
    gerekiyor. Prompt ajana üç durumu ayırtıyor:
    - **(a) depoda lint yoktu** → gelen config artık kurulumun kendisi:
      `[tool.ruff]`/`[tool.pylint]` bloğu **var olan** `pyproject.toml`'a eklenir
      (şablon bilerek `pyproject.toml` taşımıyor, ezmesin diye),
-     `eslint.config.js` TypeScript/Next.js'e uyarlanır, `rev:` pin'leri kurulu
-     sürümlerle eşitlenir. Sonra `pre-commit run --all-files` **bir kez** koşulur:
+     `rev:` pin'leri kurulu sürümlerle eşitlenir. Frontend'de
+     `npm i -D husky lint-staged` + `npm pkg set scripts.prepare=husky` +
+     `npm install` ile hook gerçekten bağlanır ve `eslint.config.js`
+     TypeScript/Next.js'e uyarlanır. Sonra tüm-ağaç taraması
+     (`pre-commit run --all-files` ya da `npm run lint`) **bir kez** koşulur:
      eski kodun patlaması beklenen şey, o yüzden sayı olarak *raporlanır* —
      sessizce toplu format atılmaz, kural gevşetilmez. Uymayan bir kural config
      düzenlemesi değil, ADR konusudur.
-   - **(b) depoda zaten lint vardı** → onlarınki kalır. `.pre-commit-config.yaml`
-     onların komutlarını çağıracak şekilde yeniden yazılır, kopya hook'lar silinir.
+   - **(b) depoda zaten lint vardı** → onlarınki kalır. Gelen kapı onların
+     komutlarını çağıracak şekilde yeniden yazılır, kopya kontroller silinir.
      Kapının tek bir tanımı olur.
-   - **(c) husky / lint-staged vardı** → iki kapı bir kapıdan kötü: ya husky
-     `pre-commit run` çağırır, ya şablonunki silinir. Ajan hangisini seçtiğini
-     söyler.
-4. **Sonrasında kapı ayakta kalır.** `AGENTS.md` → Commands'ta
-   `pre-commit run --all-files`, `run-quality-gates` skill'inde **Gate 0**.
-   `--no-verify` yok.
+   - **(c) depoda zaten bir commit hook'u vardı** (kendi husky kurulumu,
+     `package.json` içinde lint-staged, simple-git-hooks ya da elle yazılmış
+     `.git/hooks/pre-commit`) → iki kapı bir kapıdan kötü. Şablonun kontrolleri
+     onlarınkine katılır ve şablonunki silinir, ya da tersi; ajan hangisini
+     seçtiğini söyler ve sonunda tek hook koşar.
+4. **Sonrasında kapı ayakta kalır.** `AGENTS.md` → Commands'ta kapının komutu,
+   `run-quality-gates` skill'inde tüm-ağaç karşılığı. `--no-verify` yok.
 
-Her klonda bir kez: `pip install pre-commit && pre-commit install`. Bunu README'ye
-ve `manual-actions.md`'ye yazmak bootstrap adımının işi.
+Her klonda bir kez: python'da `pip install pre-commit && pre-commit install`,
+frontend'de sadece `npm install`. Bunu README'ye ve `manual-actions.md`'ye
+yazmak bootstrap adımının işi.
 
 ## Gizlilik ve izinler
 

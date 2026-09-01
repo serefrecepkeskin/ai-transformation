@@ -20,9 +20,12 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 TEMPLATES = sorted(p.name for p in HERE.iterdir() if p.is_dir() and (p / "AGENTS.md").exists())
 MANIFESTS = ("package.json", "pyproject.toml", "setup.py", "go.mod", "Cargo.toml")
-LINT_FILES = (".pre-commit-config.yaml", "eslint.config.js", "requirements-dev.txt")
+LINT_FILES = (".pre-commit-config.yaml", "requirements-dev.txt",
+              ".husky/pre-commit", ".lintstagedrc.json", "eslint.config.js")
 SCAFFOLD = {".ai", ".claude", ".github", ".vscode", ".impeccable", "docs", "tasks",
-            "AGENTS.md", "CLAUDE.md", ".mcp.json", ".git", *LINT_FILES}
+            "AGENTS.md", "CLAUDE.md", ".mcp.json", ".git", ".husky",
+            ".lintstagedrc.json", ".pre-commit-config.yaml", "requirements-dev.txt",
+            "eslint.config.js"}
 
 
 def copy_tree(src: Path, dst: Path, force: bool) -> tuple[list[str], list[str]]:
@@ -79,26 +82,43 @@ def report_lint_readiness(target: Path, written: set[str], skipped: set[str]) ->
     if not lines:
         return
 
-    if shutil.which("pre-commit"):
-        lines.append(f"  ok   {'pre-commit':<24} on PATH")
-    else:
-        lines.append(f"  todo {'pre-commit':<24} not installed  ->  pip install pre-commit")
+    # Each template brings its own ecosystem's runner: pre-commit (pip) for
+    # python, husky + lint-staged (npm) for frontend. Check the one that landed.
+    package = read_text(target / "package.json")
 
-    if (target / ".git" / "hooks" / "pre-commit").exists():
-        lines.append(f"  ok   {'.git/hooks/pre-commit':<24} wired")
-    else:
-        lines.append(f"  todo {'.git/hooks/pre-commit':<24} not wired      ->  pre-commit install")
+    if (target / ".pre-commit-config.yaml").exists():
+        if shutil.which("pre-commit"):
+            lines.append(f"  ok   {'pre-commit':<24} on PATH")
+        else:
+            lines.append(f"  todo {'pre-commit':<24} not installed  ->  pip install pre-commit")
+        if (target / ".git" / "hooks" / "pre-commit").exists():
+            lines.append(f"  ok   {'.git/hooks/pre-commit':<24} wired")
+        else:
+            lines.append(f"  todo {'.git/hooks/pre-commit':<24} not wired      ->  pre-commit install")
+
+    if (target / ".husky" / "pre-commit").exists():
+        if (target / "node_modules" / ".bin" / "lint-staged").exists():
+            lines.append(f"  ok   {'husky + lint-staged':<24} installed")
+        else:
+            lines.append(f"  todo {'husky + lint-staged':<24} missing        ->  npm i -D husky lint-staged")
+        if '"prepare"' in package and "husky" in package:
+            lines.append(f"  ok   {'package.json prepare':<24} wires the hook on npm install")
+        else:
+            lines.append(f'  todo {"package.json prepare":<24} not set        ->  npm pkg set scripts.prepare=husky')
+        if (target / ".husky" / "_").is_dir():
+            lines.append(f"  ok   {'core.hooksPath':<24} pointed at .husky/")
+        else:
+            lines.append(f"  todo {'core.hooksPath':<24} not pointed    ->  npm install (runs prepare)")
 
     pyproject = read_text(target / "pyproject.toml")
     if pyproject and "[tool.ruff]" not in pyproject:
         lines.append("  ask  pyproject.toml has no [tool.ruff] section — the bootstrap prompt adds it")
 
-    package = read_text(target / "package.json")
     if package:
         if '"lint"' not in package:
             lines.append('  ask  package.json has no "lint" script — the bootstrap prompt adds it')
-        if "husky" in package or "lint-staged" in package:
-            lines.append("  ask  husky/lint-staged already here — the bootstrap prompt reconciles the two")
+        if "lint-staged" in package and not (target / ".lintstagedrc.json").exists():
+            lines.append("  ask  lint-staged already configured in package.json — the bootstrap prompt reconciles the two")
 
     print("\nlint readiness")
     print("\n".join(lines))
@@ -106,7 +126,13 @@ def report_lint_readiness(target: Path, written: set[str], skipped: set[str]) ->
 
 def offer_precommit_install(target: Path) -> None:
     """Interactive only, explicit yes only. `pre-commit install` writes into
-    .git/hooks/, and a setup script has no business doing that unasked."""
+    .git/hooks/, and a setup script has no business doing that unasked.
+
+    The husky side needs no equivalent: `npm install` wires its hook through the
+    prepare script, so there is nothing extra to offer.
+    """
+    if not (target / ".pre-commit-config.yaml").exists():
+        return
     if not shutil.which("pre-commit"):
         return
     if (target / ".git" / "hooks" / "pre-commit").exists():

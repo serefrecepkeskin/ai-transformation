@@ -1,0 +1,20 @@
+# Prepares the Copilot coding agent's ephemeral environment before it starts
+# working: dependencies installed here are available to every agent run.
+# Merge to the default branch; test it from the Actions tab (workflow_dispatch).
+name: "Copilot Setup Steps"
+
+on: workflow_dispatch
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22 # TODO(confirm): match the repo's real Node version
+          cache: npm # TODO(confirm): npm / pnpm / yarn
+      - run: npm ci # TODO(confirm): the repo's real install command

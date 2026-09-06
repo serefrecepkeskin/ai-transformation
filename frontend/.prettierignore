@@ -1,0 +1,13 @@
+# Guardrails and kit-owned files: reformatting them drifts the repo from the company kit
+.claude
+.github/hooks
+.github/agents
+.husky
+# Vendored upstream payload, updated only with `npx impeccable update` (ADR 0002)
+.claude/skills/impeccable
+.impeccable
+# Work trail: agent-authored markdown, not source
+agent-work
+dist
+build
+coverage

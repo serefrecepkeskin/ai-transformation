@@ -1,0 +1,62 @@
+{
+  "inputs": [
+    {
+      "id": "mssql-connection-string",
+      "type": "promptString",
+      "description": "SQL Server read-only connection string",
+      "password": true
+    },
+    {
+      "id": "postgres-uri",
+      "type": "promptString",
+      "description": "PostgreSQL read-only connection URI",
+      "password": true
+    },
+    {
+      "id": "mysql-password",
+      "type": "promptString",
+      "description": "MySQL read-only user password",
+      "password": true
+    },
+    {
+      "id": "oracle-connection-string",
+      "type": "promptString",
+      "description": "Oracle read-only connection string",
+      "password": true
+    }
+  ],
+  "servers": {
+    "mssql": {
+      "command": "npx",
+      "args": ["-y", "mssql-mcp-server"],
+      "env": {
+        "MSSQL_CONNECTION_STRING": "${input:mssql-connection-string}"
+      }
+    },
+    "postgres": {
+      "command": "uvx",
+      "args": ["postgres-mcp", "--access-mode=restricted"],
+      "env": {
+        "DATABASE_URI": "${input:postgres-uri}"
+      }
+    },
+    "mysql": {
+      "command": "uvx",
+      "args": ["mysql-mcp-server"],
+      "env": {
+        "MYSQL_HOST": "TODO-host",
+        "MYSQL_PORT": "3306",
+        "MYSQL_USER": "TODO-readonly-user",
+        "MYSQL_PASSWORD": "${input:mysql-password}",
+        "MYSQL_DATABASE": "TODO-database"
+      }
+    },
+    "oracle": {
+      "command": "TODO-company-approved-oracle-mcp",
+      "args": [],
+      "env": {
+        "ORACLE_CONNECTION_STRING": "${input:oracle-connection-string}"
+      }
+    }
+  }
+}

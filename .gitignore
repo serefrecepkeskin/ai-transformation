@@ -1,0 +1,6 @@
+# Word/Office lock files
+~$*
+# macOS
+.DS_Store
+# python
+__pycache__/

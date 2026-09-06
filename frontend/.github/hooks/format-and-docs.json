@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "postToolUse": [
+      { "type": "command", "bash": ".claude/hooks/format-changed.sh", "cwd": ".", "timeoutSec": 60 }
+    ],
+    "agentStop": [
+      { "type": "command", "bash": ".claude/hooks/remind-docs.sh", "cwd": ".", "timeoutSec": 30 }
+    ]
+  }
+}

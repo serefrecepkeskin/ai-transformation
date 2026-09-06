@@ -1,0 +1,86 @@
+# Conventions
+
+> **PLACEHOLDER** — paste the bootstrap prompt to replace the TODOs with
+> the conventions actually observed in this codebase. Only rules the tools
+> (linter/formatter) don't already enforce belong here.
+
+## General
+
+- Full type hints on public functions; `Any` only with a written justification.
+- Formatting/lint: ruff, configured in `[tool.ruff]` / `[tool.pylint]` in
+  `pyproject.toml`; the same versions are pinned in `requirements-dev.txt`
+  and in the `rev:` fields of `.pre-commit-config.yaml`. TODO(confirm): the
+  repo's actual tool choice. A rule the linter enforces does not belong in
+  this file.
+- Commits & PRs: English conventional-commit title, Turkish body/description —
+  see the `commit-and-pr` skill. TODO(confirm): how it is enforced (commitlint?).
+
+## Structure & naming
+
+- Module/package layout rules: TODO (where routers, services, models live).
+- Naming: TODO (snake_case modules, model suffixes, etc. as observed).
+
+## Boundaries & errors
+
+- External input is validated at the edge (typed request models); internals
+  work with typed objects, not raw dicts.
+- Error contract: TODO (exception hierarchy, error response shape, logging).
+- Secrets/config only through the settings layer — never `os.environ` inline,
+  never committed.
+
+## Data access
+
+- TODO: session/transaction management pattern; no SQL string concatenation;
+  schema changes only via migrations (`db-migration` skill).
+
+## Logging & observability
+
+- TODO(confirm): logger usage, correlation ids, what must never be logged (PII).
+
+## Branching & PRs
+
+- Branch names: `<type>/<kebab-description>` with a conventional-commit type.
+- PR title: valid conventional commit (it becomes the squash commit).
+- TODO(confirm): release automation reading those commits, if any.
+
+## Automated guardrails (Copilot hooks & approvals)
+
+- `.claude/hooks/*.sh` — the hook scripts themselves, shared by both runtimes.
+  Wired up in `.claude/settings.json` (Claude Code) and
+  `.github/hooks/format-and-docs.json` (Copilot) — **postToolUse** auto-formats changed
+  Python files (ruff format + ruff check --fix); **agentStop** reminds when code
+  changed but `docs/` didn't (drift), or dependencies changed without an ADR.
+  Non-blocking.
+- `.github/workflows/copilot-setup-steps.yml` — preinstalls dependencies in the
+  Copilot coding agent's environment.
+- `.pre-commit-config.yaml` — the commit-time gate: the same lint/format/test
+  tools, enforced by git instead of by the agent remembering. `pip install
+  pre-commit && pre-commit install` once per clone; `pre-commit run --all-files`
+  for a full sweep. `detect-private-key` and the large-file limit are the
+  mechanical half of the secrets rule.
+- `.vscode/settings.json` (Copilot) and `.claude/settings.json` (Claude Code) —
+  what the agent may run and touch. Both files carry a comment on every block;
+  read them before changing one. Never set `chat.tools.global.autoApprove`
+  (older VS Code: `chat.tools.autoApprove`) — it approves every tool and turns
+  the whole mechanism off.
+
+### The three privacy layers, and what each one actually enforces
+
+| Layer | Where | What it really does |
+| --- | --- | --- |
+| Discovery | `search.exclude`, `files.associations`, `github.copilot.enable`, `.gitignore` | Keeps secret files out of search, the workspace index and inline completions. Does **not** stop a targeted read |
+| Action | `chat.tools.terminal.autoApprove`, `chat.tools.edits.autoApprove`, `chat.agent.sandbox.enabled`, `permissions.deny` | Approval gates on commands and edits. On the **Claude Code** side `Read()`/`Edit()` deny rules are a real block, covering the file tools and the `cat`/`head`/`tail`/`sed` commands Claude Code recognises; the sandbox is the only OS-level block on either side |
+| Prompt | Golden rule "secrets are never read, printed or pasted" | The layer that covers what the other two cannot |
+
+Why the deny list is surgical rather than "block every `.ini`": a deny rule
+cannot carry an exception. `Read(**/*.ini)` would also close `alembic.ini`,
+`pytest.ini` and `setup.cfg`, and nothing could reopen them.
+
+**Known limit, stated plainly:** GitHub's content exclusion is not applied in
+Copilot's agent or edit modes and needs Business/Enterprise, so on the Copilot
+side there is no hard block on reading a file. A secret that must never be
+readable belongs in a vault, not in the workspace.
+
+- The guardrail chain is: hooks → pre-commit → local quality gates → CI →
+  review. Hooks and pre-commit are convenience and early warning; gates, CI and
+  review remain the enforcement.

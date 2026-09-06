@@ -1,0 +1,13 @@
+# Dev toolchain for the quality gates. Pinned so local, pre-commit and CI all
+# run the exact same versions — a lint error that only appears in CI is a bug
+# in this file.
+#
+# TODO(confirm): the bootstrap prompt aligns these with the repo's real stack
+# and with the `rev:` pins in .pre-commit-config.yaml.
+#
+#   pip install -r requirements-dev.txt
+
+pre-commit==4.0.1
+ruff==0.14.13
+pylint==4.0.4
+pytest==8.3.4

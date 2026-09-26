@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 # postToolUse hook: auto-format the file the agent just edited.
 # Scope: the path(s) named in the hook JSON on stdin ("file_path" / "filePath" / "path") — so the
-# developer's own half-done work in the tree is left alone. When the JSON names no file (other runtime,
-# schema change), it falls back to every changed file in the working tree. One script for both
-# ecosystems: Python via ruff, JS/TS/CSS/MD via prettier + eslint; each branch is skipped silently when
-# its tool is not installed. Guardrail and kit-owned paths (.claude/, .github/hooks|agents/, .husky/,
+# developer's own half-done work in the tree is left alone. Only when the JSON names no file at all (other
+# runtime, schema change) does it fall back to every changed file in the working tree — a named file
+# outside the repo (a memory note, a scratchpad) formats nothing. One script for both ecosystems: Python
+# via ruff, JS/TS/CSS/MD via prettier + eslint; each branch is skipped silently when the repo does not
+# use that tool — prettier runs only in a repo that adopted it (a prettier config or dependency), and
+# only the repo's own node_modules copies are run, never one the global npx cache happens to hold.
+# Guardrail and kit-owned paths (.claude/, .agents/skills/impeccable/, .github/hooks|agents/, .husky/,
 # .impeccable/, agent-work/) are never touched. Never blocks: always exits 0. Windows: Git Bash/WSL — TODO(confirm) if the
 # team develops on Windows.
 set -u
@@ -15,15 +18,20 @@ root=$(pwd)
 
 # 1. files named by the hook payload (repo-relative, existing, inside the repo)
 changed=""
-for f in $(printf '%s' "$input" | grep -oE '"(file_path|filePath|path)" *: *"[^"]+"' | sed -E 's/^"[^"]+" *: *"//; s/"$//'); do
+named=0
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  named=1
   case "$f" in /*) ;; *) f="$root/$f" ;; esac
   case "$f" in "$root"/*) [ -f "$f" ] && changed="${changed}${f#"$root"/}"$'\n' ;; esac
-done
-# 2. fallback: everything changed in the working tree
-[ -n "$changed" ] || changed=$( (git diff --name-only HEAD -- 2>/dev/null; git ls-files --others --exclude-standard) | sort -u )
+done < <(printf '%s' "$input" | grep -oE '"(file_path|filePath|path)" *: *"[^"]+"' | sed -E 's/^"[^"]+" *: *"//; s/"$//')
+# 2. fallback: everything changed in the working tree — ONLY when the payload named no file at all.
+#    A named file outside the repo (a memory note, a scratchpad) must not reformat the developer's
+#    unrelated uncommitted work.
+[ "$named" = 1 ] || changed=$( (git diff --name-only HEAD -- 2>/dev/null; git ls-files --others --exclude-standard) | sort -u )
 # Never reformat the guardrails or kit-owned files: rewriting them is how a repo silently drifts from the
 # company kit, and the agent is not allowed to edit them by hand either (see .vscode/settings.json).
-changed=$(printf '%s\n' "$changed" | grep -vE '^(\.claude/|\.github/(hooks|agents)/|\.husky/|\.impeccable/|agent-work/)' || true)
+changed=$(printf '%s\n' "$changed" | grep -vE '^(\.claude/|\.agents/skills/impeccable/|\.github/(hooks|agents)/|\.husky/|\.impeccable/|agent-work/)' || true)
 [ -n "$changed" ] || exit 0
 
 run() { # run <newline-separated files> <command...> — NUL-safe, silent
@@ -47,8 +55,13 @@ if [ -n "$py" ]; then
 fi
 
 if command -v npx > /dev/null 2>&1; then
-  run "$(printf '%s\n' "$changed" | grep -E '\.(ts|tsx|js|jsx|vue|css|scss|json|md|yml|yaml)$' || true)" npx --no-install prettier --write
-  run "$(printf '%s\n' "$changed" | grep -E '\.(ts|tsx|js|jsx|vue)$' || true)" npx --no-install eslint --fix
+  # Prettier only when the repo opted in (a prettier config or a dependency) — not whenever some
+  # binary resolves: `npx --no-install` also finds a copy in the global npx cache, which restyled a
+  # prettier-free repo wholesale (double quotes, semicolons).
+  if ls .prettierrc* prettier.config.* > /dev/null 2>&1 || grep -qs '"prettier"' package.json; then
+    [ -x node_modules/.bin/prettier ] && run "$(printf '%s\n' "$changed" | grep -E '\.(ts|tsx|js|jsx|vue|css|scss|json|md|yml|yaml)$' || true)" node_modules/.bin/prettier --write
+  fi
+  [ -x node_modules/.bin/eslint ] && run "$(printf '%s\n' "$changed" | grep -E '\.(ts|tsx|js|jsx|vue)$' || true)" node_modules/.bin/eslint --fix
 fi
 
 exit 0

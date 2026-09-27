@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git blame:*)",
+      "Bash(git ls-files:*)",
+      "Bash(git branch --show-current)",
+      "Bash(grep:*)",
+      "Bash(ls:*)",
+      "Bash(wc:*)",
+      "Bash(bash -n:*)",
+      "Bash(shellcheck:*)",
+      "Bash(python3 -m py_compile:*)",
+      "Bash(kit/scripts/link-repo.sh * --check)",
+      "Bash(kit/scripts/link-repo.sh --root --check)",
+      "Bash(kit/scripts/link-repo.sh --kit --check)",
+      "Bash(python3 kit/scripts/sync-copilot-agents.py * --check)",
+      "Bash(tests/selftest.sh)"
+    ],
+    "ask": [
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)",
+      "Bash(kit/scripts/link-repo.sh:*)",
+      "Bash(npx impeccable:*)",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Read(kit/humans/**)",
+      "Edit(hooks/**)",
+      "Edit(.claude/settings.local.json)",
+      "Read(humans/**)",
+      "Edit(.pre-commit-config.yaml)",
+      "Edit(.husky/**)",
+      "Edit(.mcp.json)",
+      "Edit(.vscode/**)",
+      "Edit(.github/workflows/**)",
+      "Edit(.github/hooks/**)",
+      "Edit(**/.claude/settings.local.json)",
+      "Bash(gh pr merge:*)"
+    ],
+    "deny": [
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(**/*.p12)",
+      "Read(**/*.pfx)",
+      "Read(**/*credential*)",
+      "Read(**/.npmrc)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.azure/**)",
+      "Read(~/.config/gcloud/**)",
+      "Read(~/.kube/config)",
+      "Edit(kit/skills/impeccable/**)",
+      "Bash(rm -rf:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git reset --hard:*)",
+      "Read(~/.docker/config.json)",
+      "Edit(.claude/settings.json)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'h=\"$CLAUDE_PROJECT_DIR/kit/hooks/pr-gate.sh\"; [ -x \"$h\" ] && exec \"$h\"; cat >/dev/null'",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

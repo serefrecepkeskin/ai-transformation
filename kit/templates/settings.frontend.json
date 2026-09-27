@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git blame:*)",
+      "Bash(git ls-files:*)",
+      "Bash(git branch --show-current)",
+      "Bash(grep:*)",
+      "Bash(ls:*)",
+      "Bash(wc:*)",
+      "Bash(npm test)",
+      "Bash(npm run test)",
+      "Bash(npm run test:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run lint:css)",
+      "Bash(npm run typecheck)",
+      "Bash(npm run format:check)",
+      "Bash(npm run knip)",
+      "Bash(npm run dup)",
+      "Bash(npm run analyze)",
+      "Bash(npm run analyze:*)",
+      "Bash(npm run i18n:unused)",
+      "Bash(npm run build)",
+      "Bash(npm audit)",
+      "Bash(npm audit --audit-level=high)",
+      "Bash(npx eslint:*)",
+      "Bash(npx prettier:*)",
+      "Bash(npx stylelint:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npx playwright test:*)",
+      "Bash(npx knip:*)",
+      "Bash(npx jscpd:*)",
+      "Bash(npx depcruise:*)",
+      "Bash(npx type-coverage:*)",
+      "Bash(npx lint-staged:*)",
+      "Bash(pre-commit run:*)",
+      "Read(.env.example)",
+      "Edit(.env.example)"
+    ],
+    "ask": [
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(npm install:*)",
+      "Bash(npm i:*)",
+      "Bash(npm ci:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm update:*)",
+      "Bash(npm audit fix:*)",
+      "Bash(npx playwright install:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)",
+      "Edit(.claude/settings.local.json)",
+      "Edit(.pre-commit-config.yaml)",
+      "Edit(.husky/**)",
+      "Edit(.mcp.json)",
+      "Edit(.vscode/**)",
+      "Edit(.github/workflows/**)",
+      "Edit(.github/hooks/**)",
+      "Edit(**/.claude/settings.local.json)",
+      "Bash(gh pr merge:*)"
+    ],
+    "deny": [
+      "Read(.env)",
+      "Read(.env.local)",
+      "Read(.env.*.local)",
+      "Read(.env.development)",
+      "Read(.env.production)",
+      "Read(.env.staging)",
+      "Read(.env.test)",
+      "Read(.env.dev)",
+      "Read(.env.prod)",
+      "Read(e2e/.auth/**)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(**/*.p12)",
+      "Read(**/*.pfx)",
+      "Read(**/*credential*)",
+      "Read(**/.npmrc)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.azure/**)",
+      "Read(~/.config/gcloud/**)",
+      "Read(~/.kube/config)",
+      "Edit(.env)",
+      "Edit(.env.local)",
+      "Edit(.env.*.local)",
+      "Edit(.env.development)",
+      "Edit(.env.production)",
+      "Edit(.env.staging)",
+      "Edit(.env.test)",
+      "Edit(.env.dev)",
+      "Edit(.env.prod)",
+      "Edit(e2e/.auth/**)",
+      "Edit(.claude/settings.json)",
+      "Edit(.claude/hooks/**)",
+      "Edit(.claude/agents/**)",
+      "Edit(.claude/skills/**)",
+      "Bash(rm -rf:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git reset --hard:*)",
+      "Read(**/*.bak-*)",
+      "Edit(**/*.bak-*)",
+      "Read(**/.local/private/**)",
+      "Edit(**/.local/private/**)",
+      "Read(.env.backup)",
+      "Edit(.env.backup)",
+      "Read(.env.*.bak*)",
+      "Edit(.env.*.bak*)",
+      "Read(*.bak-*)",
+      "Edit(*.bak-*)",
+      "Read(.envrc)",
+      "Edit(.envrc)",
+      "Read(*.tfvars)",
+      "Edit(*.tfvars)",
+      "Read(*.tfstate)",
+      "Edit(*.tfstate)",
+      "Read(*.tfstate.*)",
+      "Edit(*.tfstate.*)",
+      "Read(.pgpass)",
+      "Edit(.pgpass)",
+      "Read(.pypirc)",
+      "Edit(.pypirc)",
+      "Read(.netrc)",
+      "Edit(.netrc)",
+      "Read(*.jks)",
+      "Edit(*.jks)",
+      "Read(*.keystore)",
+      "Edit(*.keystore)",
+      "Read(secrets/**)",
+      "Edit(secrets/**)",
+      "Read(.local/private/**)",
+      "Edit(.local/private/**)",
+      "Read(~/.docker/config.json)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'h=\"$CLAUDE_PROJECT_DIR/.claude/hooks/format-changed.sh\"; [ -x \"$h\" ] && exec \"$h\"; cat >/dev/null'",
+            "timeout": 60
+          },
+          {
+            "type": "command",
+            "command": "sh -c 'h=\"$CLAUDE_PROJECT_DIR/.claude/skills/impeccable/scripts/hook.mjs\"; [ -f \"$h\" ] && node -e \"process.exit(parseInt(process.versions.node,10)>=22?0:1)\" 2>/dev/null && exec node \"$h\"; cat >/dev/null'",
+            "timeout": 15,
+            "statusMessage": "Checking UI changes"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'h=\"$CLAUDE_PROJECT_DIR/.claude/hooks/remind-docs.sh\"; [ -x \"$h\" ] && exec \"$h\"; cat >/dev/null'",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'h=\"$CLAUDE_PROJECT_DIR/.claude/hooks/pr-gate.sh\"; [ -x \"$h\" ] && exec \"$h\"; cat >/dev/null'",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

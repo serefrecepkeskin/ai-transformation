@@ -1,0 +1,23 @@
+# Installs the template into throwaway repos and a throwaway workspace and checks the result (tests/selftest.sh).
+# macOS runs the system bash 3.2 the scripts must stay compatible with; Linux runs bash 5 and GNU tools.
+name: selftest
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  selftest:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: /bin/bash --version | head -1
+      - run: tests/selftest.sh

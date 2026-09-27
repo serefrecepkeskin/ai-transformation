@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Destekli Geliştirme — Şablon</title>
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#ffffff; --ink:#15171c; --muted:#5d6472; --line:#dde1e8;
+  --accent:#2f5bea; --accent-soft:#e8eefe; --ok:#15803d; --ok-soft:#e7f6ec; --warn:#b45309; --warn-soft:#fdf2e3;
+  --bad:#b91c1c; --bad-soft:#fdeaea; --violet:#6d28d9; --violet-soft:#f1eafe; --code:#f0f2f6;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0f1115; --panel:#171a21; --ink:#e7e9ee; --muted:#9aa3b2; --line:#2a2f3a;
+  --accent:#7b9bff; --accent-soft:#1d2540; --ok:#4ade80; --ok-soft:#14261b; --warn:#fbbf24; --warn-soft:#2b2210;
+  --bad:#f87171; --bad-soft:#2d1616; --violet:#b69cff; --violet-soft:#221a36; --code:#1e222b;
+}}
+:root[data-theme="dark"]{
+  --bg:#0f1115; --panel:#171a21; --ink:#e7e9ee; --muted:#9aa3b2; --line:#2a2f3a;
+  --accent:#7b9bff; --accent-soft:#1d2540; --ok:#4ade80; --ok-soft:#14261b; --warn:#fbbf24; --warn-soft:#2b2210;
+  --bad:#f87171; --bad-soft:#2d1616; --violet:#b69cff; --violet-soft:#221a36; --code:#1e222b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em}
+code{background:var(--code);padding:.08em .35em;border-radius:5px}
+a{color:var(--accent)}
+.app{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
+nav{position:sticky;top:0;height:100vh;overflow:auto;border-right:1px solid var(--line);background:var(--panel);padding:18px 12px}
+nav h1{font-size:15px;margin:0 8px 12px;letter-spacing:.2px}
+nav a{display:block;padding:6px 10px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:14px}
+nav a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+nav .hint{margin:14px 8px 0;font-size:12px;color:var(--muted)}
+main{padding:0 28px}
+.slide{min-height:100vh;padding:48px 0;border-bottom:1px solid var(--line);max-width:1100px;margin:0 auto;scroll-margin-top:0}
+.slide h2{font-size:30px;margin:0 0 6px;letter-spacing:-.3px}
+.slide .lead{color:var(--muted);margin:0 0 26px;font-size:17px}
+.kicker{font-size:12px;text-transform:uppercase;letter-spacing:1.4px;color:var(--accent);font-weight:700;margin-bottom:6px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))} .g3{grid-template-columns:repeat(3,minmax(0,1fr))} .g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.card h3{margin:0 0 6px;font-size:16px}
+.card p{margin:0;color:var(--muted);font-size:14.5px}
+.card ul{margin:6px 0 0;padding-left:18px;color:var(--muted);font-size:14.5px}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:99px;margin-right:4px;vertical-align:middle}
+.t-link{background:var(--accent-soft);color:var(--accent)} .t-copy{background:var(--ok-soft);color:var(--ok)}
+.t-gen{background:var(--violet-soft);color:var(--violet)} .t-repo{background:var(--warn-soft);color:var(--warn)}
+.t-no{background:var(--bad-soft);color:var(--bad)}
+/* flow diagram */
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:0;margin:8px 0 6px}
+.step{flex:1 1 150px;min-width:150px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 12px 10px;position:relative;margin:6px 26px 6px 0}
+.step:not(:last-child)::after{content:"→";position:absolute;right:-21px;top:50%;transform:translateY(-50%);color:var(--muted);font-weight:700}
+.flow.tight .step{flex:1 1 0;min-width:0;margin-right:22px}
+.flow.tight .step:not(:last-child)::after{right:-18px}
+.step > b{display:block;font-size:14.5px;overflow-wrap:anywhere}
+.step span{display:block;color:var(--muted);font-size:13px;margin-top:3px}
+.step .n{position:absolute;top:-10px;left:10px;background:var(--accent);color:#fff;border-radius:99px;font-size:11px;padding:1px 7px;font-weight:700}
+.step.hook{border-color:var(--violet)} .step.hook .n{background:var(--violet)}
+.step.gate{border-color:var(--warn)} .step.gate .n{background:var(--warn)}
+.step.human{border-color:var(--ok)} .step.human .n{background:var(--ok)}
+.vflow{display:flex;flex-direction:column;gap:0;max-width:760px}
+.vflow .step{margin:0 0 26px 0}
+.vflow .step:not(:last-child)::after{content:"↓";right:auto;left:50%;top:auto;bottom:-23px;transform:translateX(-50%)}
+.branch{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin:10px 0 0}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:14px}
+th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--code);font-size:12.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+tr:last-child td{border-bottom:0}
+.tree{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;font-family:ui-monospace,Menlo,monospace;font-size:13.5px;line-height:1.65;white-space:pre;overflow:auto}
+.tree .c{color:var(--muted)} .tree .k{color:var(--accent);font-weight:700} .tree .v{color:var(--violet)}
+.callout{border-left:4px solid var(--accent);background:var(--accent-soft);padding:12px 14px;border-radius:0 10px 10px 0;margin:16px 0;font-size:15px}
+.callout.warn{border-color:var(--warn);background:var(--warn-soft)}
+.callout.ok{border-color:var(--ok);background:var(--ok-soft)}
+.big{font-size:44px;font-weight:800;letter-spacing:-1px;margin:0 0 8px;line-height:1.1}
+.cover{display:flex;flex-direction:column;justify-content:center}
+.pill{display:inline-block;border:1px solid var(--line);background:var(--panel);border-radius:99px;padding:5px 12px;margin:4px 6px 0 0;font-size:14px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start}
+.theme{position:fixed;right:14px;bottom:14px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:99px;padding:6px 12px;font-size:13px;cursor:pointer}
+@media (max-width:900px){
+  .flow.tight .step{flex:1 1 auto;margin-right:0}
+  .app{grid-template-columns:1fr} nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+  nav a{display:inline-block} main{padding:0 16px} .g3,.g4,.g2,.cols,.branch{grid-template-columns:1fr}
+  .slide{min-height:auto;padding:36px 0} .big{font-size:32px}
+  .step{margin-right:0} .step:not(:last-child)::after{content:"↓";right:auto;left:50%;top:auto;bottom:-22px;transform:translateX(-50%)}
+  .flow{flex-direction:column} .flow .step{margin-bottom:26px}
+  table{display:block;overflow-x:auto}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<nav id="nav"><h1>AI Destekli Geliştirme — Şablon</h1><div id="navlinks"></div><div class="hint">← → ya da ↑ ↓ ile slayt değiştir</div></nav>
+<main>
+
+<!-- 1 -->
+<section class="slide cover" id="kapak" data-title="Kapak">
+  <div class="kicker">Ekip sunumu · ai-transformation şablonu</div>
+  <p class="big">AI Destekli Geliştirme — Şablon</p>
+  <p class="lead">Kurallar, araçlar ve kontroller tek yerde. Tek şablon, iki araç: aynı skill ve ajanları Claude Code ve GitHub Copilot okur. Bu sunum şablonun mantığını ve bir işin baştan sona nasıl aktığını anlatır.</p>
+  <div>
+    <span class="pill">Neden bu yapı</span><span class="pill">Üç kurulum hedefi</span><span class="pill">Bootstrap prompt</span>
+    <span class="pill">Bir prompt'un yolculuğu</span><span class="pill">Hook'lar ve PR kapısı</span><span class="pill">Copilot</span>
+    <span class="pill">Her dosya ne işe yarar</span><span class="pill">Skill'ler ve reviewer'lar</span><span class="pill">UI ve e2e</span>
+    <span class="pill">Belgeler</span><span class="pill">Kurulum ve bakım</span>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="slide" id="neden" data-title="Neden bu yapı">
+  <div class="kicker">Neden</div>
+  <h2>Hangi sorunu çözüyoruz</h2>
+  <p class="lead">Ajanlar hızlı. Ama kurallar herkesin kafasındaysa her ajan farklı iş çıkarır.</p>
+  <div class="grid g2">
+    <div class="card"><h3>Sorun: kurallar dağınık</h3><p>Her repoda farklı rehber, farklı ayar. Ajan neyi bilmesi gerektiğini bilmiyor.</p></div>
+    <div class="card"><h3>Çözüm: tek kaynak</h3><p>Kurallar ve araçlar kit'te. Tek repoda kopya, workspace'te link. Bir yerde değişir, her yerde geçerli olur.</p></div>
+    <div class="card"><h3>Sorun: review atlanıyor</h3><p>"Sonra bakarız" deniyor. Kontrolsüz kod PR'a gidiyor.</p></div>
+    <div class="card"><h3>Çözüm: PR kapısı</h3><p>Review'lar gerçekten koşmadan Claude <code>git push</code> ya da PR açamaz. CI da PR açıklamasını kontrol eder.</p></div>
+    <div class="card"><h3>Sorun: şablon koda uymuyor</h3><p>Genel bir rehber, gerçek repoyu anlatmaz. Ajan tahmin eder, tahmine güvenilir.</p></div>
+    <div class="card"><h3>Çözüm: bootstrap prompt</h3><p>Kurulumdan sonra ajan her <code>PLACEHOLDER</code>'ı gerçek koddan doldurur. Doğrulayamadığını <code>TODO(confirm)</code> bırakır.</p></div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide" id="hedefler" data-title="Üç kurulum hedefi">
+  <div class="kicker">Kurulum</div>
+  <h2>Üç kurulum hedefi</h2>
+  <p class="lead">Tek komut: <code>install.sh &lt;hedef&gt;</code>. Script hedefe bakar, sorar, kurar.</p>
+  <div class="flow">
+    <div class="step"><span class="n">1</span><b><code>install.sh &lt;hedef&gt;</code></b><span>Bir repo ya da repolardan oluşan bir klasör.</span></div>
+    <div class="step hook"><span class="n">2</span><b>Hedefi tanır</b><span><code>.git</code> var → tek repo. Alt klasörleri git reposu → workspace.</span></div>
+    <div class="step"><span class="n">3</span><b>Sorar</b><span>Profil (manifest'ten tahmin), AI aracı: <code>claude</code> / <code>copilot</code> / <code>both</code>.</span></div>
+    <div class="step human"><span class="n">4</span><b>Bootstrap prompt'u basar</b><span>Ajana yapıştırırsın, gerisini o doldurur.</span></div>
+  </div>
+  <div class="grid g3" style="margin-top:10px">
+    <div class="card"><h3>Tek frontend repo</h3><p>Anlar: <code>package.json</code>.</p><ul><li>kit dosyaları <b>kopyalanır</b></li><li><code>verify-ui</code>, <code>ui-check</code>, <code>impeccable</code>, <code>frontend-reviewer</code></li><li>husky + lint-staged, Playwright e2e iskeleti</li></ul></div>
+    <div class="card"><h3>Tek backend repo</h3><p>Anlar: <code>pyproject.toml</code> / <code>requirements*.txt</code> / <code>setup.py</code>.</p><ul><li>kit dosyaları <b>kopyalanır</b></li><li><code>new-endpoint</code>, <code>db-migration</code>, <code>backend-reviewer</code></li><li>pre-commit kapısı</li></ul></div>
+    <div class="card"><h3>Workspace</h3><p>Anlar: alt klasörleri git reposu olan klasör.</p><ul><li>yanına kendi <code>agent-kit</code> reposunu oluşturur</li><li>kökü kurar, her repoyu profiline göre <b>link</b>'ler</li><li>her repo: <code>backend</code> / <code>frontend</code> / <code>skip</code></li></ul></div>
+  </div>
+  <div class="callout">Sormadan kurmak için: <code>--yes</code>, <code>--tool</code>, <code>--profile</code>, <code>--kit-remote &lt;url&gt;</code>. Boş repo: <code>--new</code> (önce karar, sonra iskelet). Var olan dosyaya dokunmaz; tekrar çalıştırmak güvenli.</div>
+</section>
+
+<!-- 4 -->
+<section class="slide" id="tek-mi-workspace-mi" data-title="Tek repo mu workspace mi">
+  <div class="kicker">Karar</div>
+  <h2>Tek repo mu, workspace mi</h2>
+  <p class="lead">Repolar birbirine dokunuyorsa workspace. Tek başına yaşıyorsa tek repo.</p>
+  <table>
+    <tr><th></th><th>Tek repo</th><th>Workspace</th></tr>
+    <tr><td><b>Kit dosyaları</b></td><td>repoya <span class="tag t-copy">kopya</span> (<code>.claude/</code>)</td><td><code>agent-kit/</code>'e <span class="tag t-link">link</span> — bir değişiklik tüm repolara yansır</td></tr>
+    <tr><td><b>Kurallar</b></td><td><code>docs/engineering/principles.md</code> + repo <code>AGENTS.md</code></td><td>kök <code>AGENTS.md</code> (platform rehberi) + repo <code>AGENTS.md</code></td></tr>
+    <tr><td><b>Claude nereden başlar</b></td><td>repo kökünden</td><td><b>workspace kökünden</b> — kök ayarları tüm repolara uygulanır</td></tr>
+    <tr><td><b>İz (<code>agent-work/</code>)</b></td><td>reponun içinde, <code>.gitignore</code>'da</td><td>kökte, hiçbir reponun içinde değil</td></tr>
+    <tr><td><b>Neyi hatırlar</b></td><td><code>.claude/kit.conf</code> (profil, araç, mod)</td><td><code>agent-kit/root/workspace.conf</code> — tek liste</td></tr>
+    <tr><td><b>Güncelleme</b></td><td>şablonu çek → <code>install.sh &lt;repo&gt; --refresh</code></td><td>kit'i güncelle → <code>agent-kit/install.sh --refresh</code></td></tr>
+    <tr><td><b>Kontrol</b></td><td><code>install.sh &lt;repo&gt; --check</code> (bayt bayt)</td><td><code>agent-kit/scripts/check-drift.sh</code></td></tr>
+    <tr><td><b>Ne zaman</b></td><td>tek başına repo; Copilot coding agent (bulut)</td><td>birbirine dokunan repolar: API + panel + worker …</td></tr>
+  </table>
+  <div class="callout warn"><b>Sınırlar:</b> Copilot coding agent tek repoyu klonlar; kardeş klasördeki kit'e giden link'ler orada boştur → o repoyu tek-repo modunda kur. Windows'ta symlink için Developer Mode + <code>git config core.symlinks true</code> gerekir. Workspace içindeki bir repoya tek-repo kurulumu reddedilir; bilerek istiyorsan <code>--standalone</code>.</div>
+</section>
+
+<!-- 5 -->
+<section class="slide" id="buyuk-resim" data-title="Büyük resim">
+  <div class="kicker">Büyük resim</div>
+  <h2>Klasörler ve üç katman</h2>
+  <p class="lead">Kurallar üç katmanda. Üsttekiler her yerde geçerli, alttakiler repoya özel. Örnek workspace:</p>
+  <div class="cols">
+    <div class="tree"><span class="k">shop/</span>                    <span class="c">← Claude buradan başlar</span>
+├─ AGENTS.md  CLAUDE.md    <span class="c">→ agent-kit/platform'a link</span>
+├─ .claude/settings.json   <span class="c">izinler + hook'lar (kopya)</span>
+├─ workspace.code-workspace <span class="c">Copilot / VS Code (üretilir)</span>
+├─ agent-work/             <span class="c">işlerin izi (git'e girmez)</span>
+├─ <span class="k">agent-kit/</span>              <span class="c">tek kaynak (ayrı git reposu)</span>
+│  ├─ platform/  skills/  agents/
+│  ├─ hooks/  scripts/  templates/
+│  ├─ root/workspace.conf  <span class="c">araç + repo → profil</span>
+│  └─ humans/             <span class="c">insanlar için belgeler</span>
+├─ api-service/            <span class="c">backend</span>
+├─ worker/                 <span class="c">backend</span>
+└─ web-app/                <span class="c">frontend</span></div>
+    <div class="vflow">
+      <div class="step"><span class="n">1</span><b>Platform rehberi</b><span><code>agent-kit/platform/AGENTS.md</code> — repo haritası, ortak veri, branch'ler, 12 prensip, görev akışı. Her oturumda yüklenir. Tek repoda yerine <code>docs/engineering/principles.md</code>.</span></div>
+      <div class="step"><span class="n">2</span><b>Repo rehberi</b><span><code>&lt;repo&gt;/AGENTS.md</code> — sadece o repoya özel. 8 sabit başlık. Çelişirse repo kazanır. ≤ ~12 KB.</span></div>
+      <div class="step"><span class="n">3</span><b>Kit</b><span>skill'ler, reviewer ajanları, hook'lar, şablonlar. "Nasıl çalışılır" kısmı.</span></div>
+    </div>
+  </div>
+  <div class="callout">Claude Code yalnız <b>başladığı klasörün</b> <code>.claude/settings.json</code>'ını uygular. Bu yüzden hem kökte hem her repoda bir ayar kopyası var: nereden başlarsan başla korumalar açık.</div>
+</section>
+
+<!-- 6 -->
+<section class="slide" id="bootstrap" data-title="Kurulum sonrası: bootstrap prompt">
+  <div class="kicker">Bootstrap</div>
+  <h2>Kurulum sonrası: bootstrap prompt</h2>
+  <p class="lead">Kurulan dosyalar geneldir. Bootstrap prompt'u onları <b>bu</b> kod tabanı için doğru yapar — yalnız kanıttan.</p>
+  <div class="flow">
+    <div class="step"><span class="n">1</span><b>Tara</b><span>Manifest, klasörler, CI, testler, eski belgeler, <code>git log</code>. Önce oku, sonra yaz.</span></div>
+    <div class="step"><span class="n">2</span><b>Doldur</b><span><code>AGENTS.md</code>'nin 8 başlığı ve <code>docs/</code> altındaki her <code>PLACEHOLDER</code>.</span></div>
+    <div class="step gate"><span class="n">3</span><b>Kapıyı bağla</b><span>Repoda lint yoksa gelen ayar esas; varsa onlarınki kazanır. Sonunda <b>tek</b> commit kapısı.</span></div>
+    <div class="step"><span class="n">4</span><b>Ön koşullar</b><span>Hook gerçekten bağlı mı, Node sürümü, sır dosyaları. Eksik → <code>manual-actions.md</code>.</span></div>
+    <div class="step human"><span class="n">5</span><b>Rapor</b><span>Neyi nereden doldurdu, açık <code>TODO(confirm)</code>'lar, insana kalanlar.</span></div>
+  </div>
+  <div class="grid g3" style="margin-top:10px">
+    <div class="card"><h3>Demir kural</h3><p>Yazılan her şey repoda okunmuş bir dosyadan gelir. Doğrulanamayan <code>TODO(confirm): &lt;soru&gt;</code> olur. Görünür boşluk, makul tahminden iyidir.</p></div>
+    <div class="card"><h3>İki tür dosya</h3><p><span class="tag t-link">kit'e ait</span> skill, ajan, hook, settings, <code>pr-evidence.yml</code> — burada düzenlenmez. <span class="tag t-repo">repoya ait</span> <code>AGENTS.md</code>, <code>docs/</code>, kapı dosyaları — doldurmak senin işin.</p></div>
+    <div class="card"><h3>Workspace'te</h3><p>Her repoda bir tur, sonra kökte bir kez: platform rehberi (repo haritası, ortak veri, branch'ler), <code>pr-evidence.yml</code> promosyon kuralı, kapının hassas yolları.</p></div>
+  </div>
+  <div class="callout warn">Bootstrap bir görev değildir: kod değişmez, <code>agent-work/</code> açılmaz, commit ve PR yok. Boş repoda başka prompt: <code>install.sh … --new</code> → önce stack kararı, sonra iskelet.</div>
+</section>
+
+<!-- 7 -->
+<section class="slide" id="yolculuk" data-title="Bir prompt'un yolculuğu">
+  <div class="kicker">Akış</div>
+  <h2>Bir prompt'un yolculuğu</h2>
+  <p class="lead">Örnek: "Sipariş listesine durum filtresi ekle." <code>api-service</code> + <code>web-app</code> değişecek.</p>
+  <div class="flow">
+    <div class="step"><span class="n">1</span><b>Prompt</b><span>Workspace kökünden açılan oturuma yazıyorsun.</span></div>
+    <div class="step"><span class="n">2</span><b>Rehberler yüklenir</b><span>Platform <code>AGENTS.md</code> + dokunulan repoların <code>AGENTS.md</code>'si.</span></div>
+    <div class="step"><span class="n">3</span><b>Skill seçilir</b><span>İş büyükse <code>/write-spec</code> → <code>agent-work/…/spec.md</code>. Sonra <code>/implement-task</code>.</span></div>
+    <div class="step"><span class="n">4</span><b>Kod yazılır</b><span>Endpoint için <code>/new-endpoint</code>, tablo için <code>/db-migration</code>.</span></div>
+  </div>
+  <div class="flow">
+    <div class="step hook"><span class="n">5</span><b>Her kayıtta hook</b><span>Dosya biçimlenir (ruff / eslint). Frontend'de impeccable tasarım kontrolü.</span></div>
+    <div class="step"><span class="n">6</span><b>Testler + kapılar</b><span>Test yazılır, repo kapıları koşar (sayıyla: "42 passed").</span></div>
+    <div class="step"><span class="n">7</span><b>UI kontrolü</b><span>Ekran değiştiyse <code>/verify-ui</code>: gerçek tarayıcıda.</span></div>
+    <div class="step gate"><span class="n">8</span><b>Review kapısı</b><span><code>/simplify</code> · <code>/code-review</code> · reviewer ajanı · güvenlik → <code>review.md</code>.</span></div>
+  </div>
+  <div class="flow">
+    <div class="step"><span class="n">9</span><b>Commit / PR</b><span>Sadece sen isteyince. <code>/commit-and-pr</code>.</span></div>
+    <div class="step gate"><span class="n">10</span><b>PR kapısı hook'u</b><span>Review'lar oturumda koşmadıysa push/PR <b>durur</b>.</span></div>
+    <div class="step gate"><span class="n">11</span><b>CI</b><span>Reponun kendi CI'ı + <code>pr-evidence.yml</code> (PR açıklamasında doğrulama + review var mı).</span></div>
+    <div class="step human"><span class="n">12</span><b>Merge</b><span>Her zaman insan. Ajan en fazla önerir, sen onaylarsın.</span></div>
+  </div>
+  <div class="legend"><span><i style="background:var(--accent)"></i>ajan adımı</span><span><i style="background:var(--violet)"></i>otomatik hook</span><span><i style="background:var(--warn)"></i>kapı / kontrol</span><span><i style="background:var(--ok)"></i>insan</span></div>
+  <div class="callout ok">Oturum bitince (Stop hook) hatırlatır: "model değişti ama migration yok", "UI değişti, tarayıcı kontrolü bekliyor", ve o oturumda <b>gerçekten</b> hangi skill ve ajanların koştuğunu tek satırda yazar.</div>
+</section>
+
+<!-- 8 -->
+<section class="slide" id="hooklar" data-title="Otomatik hook'lar">
+  <div class="kicker">Otomatik kontroller</div>
+  <h2>Hook'lar — sen bir şey yapmadan çalışanlar</h2>
+  <p class="lead">Hook = ajanın belli anlarında kendiliğinden çalışan küçük script. Kaynağı: kit'in <code>hooks/</code> klasörü.</p>
+  <table>
+    <tr><th>Ne zaman</th><th>Hook</th><th>Ne yapar</th><th>Durdurur mu</th></tr>
+    <tr><td>Her Bash komutundan <b>önce</b> (Claude)</td><td><code>pr-gate.sh</code> → <code>pr_gate.py</code></td><td>Komut <code>git push</code> ya da <code>gh pr create</code> ise review kanıtlarını arar. Diğer komutlara dokunmaz.</td><td><span class="tag t-no">Evet</span> kanıt yoksa</td></tr>
+    <tr><td>Her dosya düzenlemesinden <b>sonra</b></td><td><code>format-changed.sh</code></td><td>Sadece düzenlenen dosyayı biçimler: Python'da <code>ruff format</code> + import sıralama; JS/TS'de eslint --fix (+ prettier, repo kullanıyorsa).</td><td>Hayır</td></tr>
+    <tr><td>Frontend'de düzenlemeden <b>sonra</b></td><td>impeccable hook'u</td><td>Değişen UI dosyasında bariz tasarım hatası arar. Node 22+ ister. Repo içinden başlatınca çalışır.</td><td>Hayır, uyarır</td></tr>
+    <tr><td>Oturum <b>bitince</b></td><td><code>remind-docs.sh</code></td><td>Unutulanları hatırlatır: migration, test, çeviri dosyaları, <code>screens.md</code>, bağımlılık denetimi. Oturum özetini yazar.</td><td>Hayır</td></tr>
+  </table>
+  <div class="callout warn">Kapının kaçış yolu var: komutun başına <code>KIT_GATE_SKIP=1 KIT_GATE_REASON=neden</code>. Geçer ama <code>agent-work/&lt;branch&gt;/&lt;repo&gt;/gate-skips.log</code>'a yazılır; reviewer görür.</div>
+  <div class="callout">Copilot aynı format ve hatırlatma script'lerini <code>.github/hooks/</code> üzerinden çalıştırır. PR kapısı hook'u yalnız Claude Code'da var; Copilot'ta çizgiyi CI tutar.</div>
+</section>
+
+<!-- 9 -->
+<section class="slide" id="pr-kapisi" data-title="PR kapısı">
+  <div class="kicker">PR kapısı</div>
+  <h2>Push ve PR nasıl kontrol ediliyor</h2>
+  <p class="lead">İki yarı var: ajanın bilgisayarında hook, GitHub'da CI.</p>
+  <div class="flow">
+    <div class="step"><span class="n">1</span><b>Ajan push/PR ister</b><span><code>git push</code> ya da <code>gh pr create</code></span></div>
+    <div class="step hook"><span class="n">2</span><b>Hook oturum kaydına bakar</b><span>Bu oturumda gerçekten koştu mu?</span></div>
+    <div class="step gate"><span class="n">3</span><b>Aranan 5 şey</b><span>/simplify · /code-review · reponun reviewer'ı · güvenlik taraması · <code>review.md</code></span></div>
+  </div>
+  <div class="branch">
+    <div class="card" style="border-color:var(--bad)"><h3 style="color:var(--bad)">Eksik varsa → durur</h3><p>Ajan eksik listesini görür: "şu review koşmadı, şu dosya yok". Tamamlar, tekrar dener.</p></div>
+    <div class="card" style="border-color:var(--ok)"><h3 style="color:var(--ok)">Tamamsa → geçer</h3><p>Push gider. PR açılınca CI <code>pr-evidence.yml</code> açıklamada <code>## Nasıl doğrulandı</code>, <code>## Self-review</code> ve reviewer adını arar.</p></div>
+  </div>
+  <div class="grid g3" style="margin-top:14px">
+    <div class="card"><h3>Güvenlik ajanı ne zaman şart</h3><p>auth, session, permission, rbac, jwt, secret, password, credential, consent ya da migration dosyası değiştiyse <code>security-reviewer</code> zorunlu. Liste <code>pr_gate.py</code>'deki <code>SENSITIVE</code>; workspace genişletir.</p></div>
+    <div class="card"><h3>Muaf olanlar</h3><p>Promosyon/deploy PR'ları: varsayılan <code>production</code> ve <code>release/*</code>'a giden PR'lar. Hook ve CI aynı kuralı uygular; bootstrap workspace'e göre ayarlar.</p></div>
+    <div class="card"><h3>Oturumlar arası</h3><p><code>review.md</code> içindeki <code>## Gate</code> bloğu sonraki oturumda kanıt sayılır. <code>/commit-and-pr</code> yazar.</p></div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="slide" id="copilot" data-title="Copilot ile nasıl çalışır">
+  <div class="kicker">Copilot</div>
+  <h2>Copilot ile nasıl çalışır</h2>
+  <p class="lead">Aynı skill'ler, aynı ajanlar, aynı rehber. Fark: Copilot'ta kapıyı hook değil CI tutar.</p>
+  <table>
+    <tr><th>Parça</th><th>Claude Code</th><th>GitHub Copilot</th></tr>
+    <tr><td><b>Rehber</b></td><td><code>CLAUDE.md</code> → <code>@AGENTS.md</code></td><td><code>.github/copilot-instructions.md</code> — sadece işaretçi, kural yazılmaz</td></tr>
+    <tr><td><b>Skill'ler</b></td><td><code>.claude/skills/</code></td><td>aynı klasör</td></tr>
+    <tr><td><b>Reviewer ajanları</b></td><td><code>.claude/agents/*.md</code> (asıl tanım)</td><td><code>.github/agents/*.agent.md</code> — <b>ikiz</b>, <code>sync-copilot-agents.py</code> üretir, elle yazılmaz</td></tr>
+    <tr><td><b>Hook'lar</b></td><td>format, hatırlatma, <b>PR kapısı</b></td><td>format + hatırlatma (<code>.github/hooks/</code>); PR kapısı yok</td></tr>
+    <tr><td><b>İzinler</b></td><td><code>.claude/settings.json</code></td><td><code>.vscode/settings.json</code>: terminal onayları, düzenleme onayları, sandbox</td></tr>
+    <tr><td><b>Tarayıcı</b></td><td>Claude in Chrome, Playwright MCP (<code>.mcp.json</code>)</td><td>VS Code tarayıcı araçları, Playwright MCP (<code>.vscode/mcp.json</code>)</td></tr>
+    <tr><td><b>Bulut ajanı</b></td><td>—</td><td>Copilot coding agent: <code>copilot-setup-steps.yml</code> ortamı hazırlar; repo tek-repo modunda olmalı</td></tr>
+    <tr><td><b>Kapı</b></td><td>hook + <code>pr-evidence.yml</code></td><td><code>pr-evidence.yml</code> — PR açıklamasında doğrulama + review yoksa kırmızı</td></tr>
+  </table>
+  <div class="callout">Kurulumda araç seçilir: <code>claude</code> Copilot dosyalarını, <code>copilot</code> Claude dosyalarını (<code>CLAUDE.md</code>, <code>.claude/settings.json</code>, <code>.mcp.json</code>) yazmaz; <code>both</code> hepsini. Rehber kurulu olmayan bir korumayı anlatmaz. Workspace'te Copilot için VS Code'da <code>workspace.code-workspace</code>'i aç.</div>
+</section>
+
+<!-- 11 -->
+<section class="slide" id="iz" data-title="agent-work izi">
+  <div class="kicker">İz</div>
+  <h2>agent-work: işin hafızası</h2>
+  <p class="lead">Her iş bir branch. İzi git'e hiç girmez: workspace'te kökte, tek repoda repo içinde (<code>.gitignore</code>'da).</p>
+  <div class="cols">
+    <div class="tree"><span class="k">agent-work/</span>
+└─ <span class="k">feat-durum-filtresi/</span>    <span class="c">← iş = branch adı (/ → -)</span>
+   ├─ spec.md                <span class="c">ne yapılacak, "bitti" nedir</span>
+   ├─ plan.md                <span class="c">birden çok oturumsa</span>
+   ├─ <span class="v">api-service/</span>
+   │  ├─ report.md           <span class="c">uygulayıcının raporu</span>
+   │  └─ review.md           <span class="c">review bulguları + ## Gate</span>
+   └─ <span class="v">web-app/</span>
+      ├─ report.md
+      ├─ review.md
+      └─ ui-smoke.md         <span class="c">tarayıcı kontrolü</span></div>
+    <div class="grid">
+      <div class="card"><h3>Neden repo alt klasörü</h3><p>Bir iş birden çok repoya dokunur. Hangi review'un hangi repoya ait olduğu klasör adından belli. Kapı <code>&lt;repo&gt;/review.md</code>'yi arar.</p></div>
+      <div class="card"><h3>Neden git'e girmez</h3><p>Taslaklar ve ara notlar geçmişi kirletmez. Kalıcı olması gereken şey PR açıklamasına, ADR'ye ya da <code>docs/</code>'a gider.</p></div>
+      <div class="card"><h3>Oturumlar arası hafıza</h3><p>Sohbet geçicidir, <code>plan.md</code> ve <code>report.md</code> kalır. Yarın kaldığın yerden devam edersin. Şablonlar: kit'in <code>templates/</code> klasörü.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 12 -->
+<section class="slide" id="repo-dosyalari" data-title="Her repoda hangi dosya">
+  <div class="kicker">Repo dosyaları</div>
+  <h2>Her repoda duran ajan dosyaları</h2>
+  <p class="lead">Şablonun kurduğu her dosya bir işe yarıyor. <code>--check</code> / <code>check-drift.sh</code> her birinin doğru yerde olduğunu kanıtlar.</p>
+  <table>
+    <tr><th>Dosya</th><th>Ne işe yarar</th><th>Türü</th><th>Kim okur</th></tr>
+    <tr><td><code>AGENTS.md</code></td><td>Repo rehberi. 8 sabit başlık: Stack &amp; run, Where code goes, Reuse, Conventions, Security &amp; gotchas, Shared data / Screens &amp; design, Tests, Workflow.</td><td><span class="tag t-repo">tohum</span></td><td>Claude, Copilot</td></tr>
+    <tr><td><code>CLAUDE.md</code></td><td><code>@AGENTS.md</code> (tek repoda + <code>@docs/engineering/principles.md</code>).</td><td><span class="tag t-repo">tohum</span></td><td>Claude</td></tr>
+    <tr><td><code>docs/</code></td><td>Bilgi tabanı: <code>engineering/</code>, <code>domain/</code>, <code>decisions/</code>; frontend'de <code>DESIGN.md</code>, <code>screens.md</code>.</td><td><span class="tag t-repo">tohum</span></td><td>ajan, insan</td></tr>
+    <tr><td><code>.claude/skills/*</code>, <code>.claude/agents/*.md</code></td><td>Skill'ler ve reviewer ajanları; profile göre.</td><td><span class="tag t-link">link</span> / <span class="tag t-copy">kopya</span></td><td>Claude, Copilot</td></tr>
+    <tr><td><code>.claude/hooks</code></td><td>Format, hatırlatma, PR kapısı script'leri.</td><td><span class="tag t-link">link</span> / <span class="tag t-copy">kopya</span></td><td>settings, Copilot hook'ları</td></tr>
+    <tr><td><code>.claude/settings.json</code></td><td>İzinler (izin ver / sor / yasak) ve hook bağlantıları.</td><td><span class="tag t-copy">kopya</span></td><td>Claude</td></tr>
+    <tr><td><code>.claude/kit.conf</code></td><td>Bu reponun profili, aracı, modu (link / copy). Tekrar kurulum bayraksız çalışır.</td><td><span class="tag t-gen">üretilir</span></td><td>install, link-repo</td></tr>
+    <tr><td><code>.github/workflows/pr-evidence.yml</code></td><td>CI'da PR açıklamasını kontrol eder. İnsan ya da Copilot açtığında da çalışır.</td><td><span class="tag t-copy">kopya</span></td><td>GitHub Actions</td></tr>
+    <tr><td><code>.github/agents/*.agent.md</code></td><td>Reviewer'ların Copilot ikizi.</td><td><span class="tag t-gen">üretilir</span></td><td>Copilot</td></tr>
+    <tr><td><code>.github/copilot-instructions.md</code>, <code>.github/hooks/</code>, <code>.vscode/</code>, <code>copilot-setup-steps.yml</code></td><td>Copilot'un işaretçisi, hook'ları, izinleri, bulut ortamı.</td><td><span class="tag t-repo">tohum</span></td><td>Copilot</td></tr>
+    <tr><td>Kapı dosyaları</td><td>Backend: <code>.pre-commit-config.yaml</code>, <code>requirements-dev.txt</code>. Frontend: <code>.husky/pre-commit</code>, <code>.lintstagedrc.json</code>, <code>eslint.config.js</code>, <code>playwright.config.ts</code>, <code>e2e/</code>, <code>.mcp.json</code>.</td><td><span class="tag t-repo">tohum</span></td><td>git, npm, Claude</td></tr>
+    <tr><td><code>docs/engineering/principles.md</code></td><td>12 prensip (sadece tek repoda; workspace'te kök rehberde).</td><td><span class="tag t-copy">kopya</span></td><td>Claude, Copilot</td></tr>
+  </table>
+  <div class="legend"><span><span class="tag t-link">link</span> workspace'te kit'e işaret eder</span><span><span class="tag t-copy">kopya</span> kit'le bayt bayt aynı olmalı</span><span><span class="tag t-gen">üretilir</span> script üretir, elle yazılmaz</span><span><span class="tag t-repo">tohum</span> bir kez yazılır, sonra repoya ait</span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide" id="gerekli-mi" data-title="Gerçekten gerekli mi">
+  <div class="kicker">SSS</div>
+  <h2>"Kökten başlıyorsak repo içindeki bu dosyalar gerekli mi?"</h2>
+  <p class="lead">Evet. Üç sebep.</p>
+  <div class="grid g3">
+    <div class="card"><h3>1. Repo içinden çalışan olur</h3><p>Biri repo klasöründe <code>claude</code> açarsa orada da izinler, hook'lar ve kapı çalışmalı. Kökün ayarı o zaman uygulanmaz.</p></div>
+    <div class="card"><h3>2. Copilot repo içinden okur</h3><p>Copilot rehberi <code>.github/copilot-instructions.md</code>'den, ajanları <code>.github/agents</code>'tan okur. Bulut ajanı yalnız tek repoyu görür.</p></div>
+    <div class="card"><h3>3. CI repo içinde koşar</h3><p><code>pr-evidence.yml</code> GitHub'da her repoda ayrı çalışır. Workflow repoda olmak zorunda.</p></div>
+  </div>
+  <div class="callout ok"><b>Profil kuralı:</b> backend repolar <code>new-endpoint</code>, <code>db-migration</code>, <code>backend-reviewer</code> alır; frontend repolar <code>verify-ui</code>, <code>ui-check</code>, <code>impeccable</code>, <code>frontend-reviewer</code>. Ortak: <code>write-spec</code>, <code>implement-task</code>, <code>review</code>, <code>commit-and-pr</code>, <code>security-reviewer</code>. Profil değişirse öbür profilin link'leri temizlenir; reponun aynı adlı kendi dosyasına dokunulmaz.</div>
+  <div class="callout warn">Workspace'te link'ler <code>../agent-kit</code>'i gösterir. <code>agent-kit</code> yanında olmayan bir makinede (sunucu, bulut ajanı) link boş kalır — orada tek-repo modu kullanılır.</div>
+</section>
+
+<!-- 14 -->
+<section class="slide" id="kit" data-title="Kit'in içi">
+  <div class="kicker">Kit</div>
+  <h2>Şablonun ve kit'in içinde ne var</h2>
+  <p class="lead">Şablon reposunda <code>kit/</code>; workspace'te <code>agent-kit/</code> olur, tek repoda parça parça kopyalanır.</p>
+  <div class="grid g3">
+    <div class="card"><h3><code>platform/</code></h3><p>Kök rehber <code>AGENTS.md</code>, <code>principles.md</code> (aynı metin, test kanıtlar), platform belgeleri <code>SECURITY.md</code>, <code>DEPLOYMENT.md</code>, <code>SCHEMA.md</code> — boş iskelet, bootstrap doldurur.</p></div>
+    <div class="card"><h3><code>skills/</code></h3><p>9 skill: 8 kendi skill'i + <code>impeccable</code>. Ajanın "nasıl yapılır" kılavuzları.</p></div>
+    <div class="card"><h3><code>agents/</code></h3><p>3 reviewer: backend, frontend, güvenlik.</p></div>
+    <div class="card"><h3><code>hooks/</code></h3><p><code>pr-gate.sh</code> → <code>pr_gate.py</code>, <code>format-changed.sh</code>, <code>remind-docs.sh</code>, <code>_changed.sh</code>.</p></div>
+    <div class="card"><h3><code>scripts/</code></h3><p><code>link-repo.sh</code> ("doğru kurulum"un tek tanımı), <code>check-drift.sh</code> (kontrol), <code>sync-copilot-agents.py</code> (Copilot ikizleri).</p></div>
+    <div class="card"><h3><code>templates/</code></h3><p>4 settings şablonu, <code>AGENTS.{backend,frontend}.md</code>, <code>pr-evidence.yml</code>, spec/plan/report/review, <code>repo.{backend,frontend}/</code> tohumları.</p></div>
+    <div class="card"><h3><code>root/</code></h3><p><code>workspace.conf</code>: araç + her repo → profil. Klonlama, bağlama, kontrol hep buradan okur.</p></div>
+    <div class="card"><h3><code>install.sh</code></h3><p>Şablonda: hedefi tanır, kurar. Kit'te: yeni makinede eksik repoları klonlar, bağlar, kontrol eder.</p></div>
+    <div class="card"><h3><code>humans/</code> + <code>tests/</code></h3><p><code>humans/</code>: insanlar için, ajan istenmedikçe okumaz. <code>tests/selftest.sh</code>: üç hedefi geçici klasörlerde kurar ve doğrular (CI'da da).</p></div>
+  </div>
+</section>
+
+<!-- 15 -->
+<section class="slide" id="skilller" data-title="Skill'ler">
+  <div class="kicker">Skill'ler</div>
+  <h2>Skill'ler — ajanın kılavuzları</h2>
+  <p class="lead">Skill = belli bir iş için adım adım talimat. Ajan uygun olanı kendisi seçer, istersen terminalde <code>/ad</code> yazarak çağırırsın.</p>
+  <table>
+    <tr><th>Skill</th><th>Ne zaman</th><th>Nerede</th></tr>
+    <tr><td><code>write-spec</code></td><td>İş büyükse ya da başkasına (alt-ajan, Copilot coding agent, ekip arkadaşı) verilecekse. spec.md ve plan.md yazar.</td><td>hepsi</td></tr>
+    <tr><td><code>implement-task</code></td><td>"Bunu yap", "şunu düzelt". Rehberi okur, en küçük değişiklik, test, kapılar, rapor.</td><td>hepsi</td></tr>
+    <tr><td><code>review</code></td><td>Diff'i soğuk okur, önem sırasıyla bulgu. Reviewer ajanlarının "mercekleri" burada; Copilot doğrudan koşar.</td><td>hepsi</td></tr>
+    <tr><td><code>commit-and-pr</code></td><td>"Commit at", "PR aç". Önce kapı, sonra İngilizce başlık + Türkçe gövde, AI trailer'ı yok.</td><td>hepsi</td></tr>
+    <tr><td><code>new-endpoint</code></td><td>Yeni ya da değişen endpoint: ince route, servis, çağırana göre kapsam, izin, rate limit, audit, testler.</td><td>backend</td></tr>
+    <tr><td><code>db-migration</code></td><td>Tablo/kolon değişikliği: model + reponun aracıyla migration, geri alınabilir, test, deploy sırası.</td><td>backend</td></tr>
+    <tr><td><code>verify-ui</code></td><td>Her ekran değişikliğinden sonra: gerçek tarayıcıda o ekranı kontrol.</td><td>frontend</td></tr>
+    <tr><td><code>ui-check</code></td><td>Sürüm öncesi tam tarama: ekran × rol × genişlik (× dil) matrisi.</td><td>frontend</td></tr>
+    <tr><td><code>impeccable</code></td><td>Tasarım eleştirisi, cila, erişilebilirlik (dışarıdan alındı).</td><td>frontend</td></tr>
+  </table>
+  <div class="callout">Claude Code'un kendi hazır komutları da kapının parçası: <code>/simplify</code> (tekrar, gereksiz karmaşıklık), <code>/code-review</code> (hata avı), <code>/security-review</code> (güvenlik). Kişisel skill'ler <code>~/.claude/skills/</code>'a konur, kit'e girmez.</div>
+</section>
+
+<!-- 16 -->
+<section class="slide" id="skill-kullanimi" data-title="Skill'leri nasıl kullanırım">
+  <div class="kicker">Kullanım</div>
+  <h2>Skill'leri terminalden nasıl kullanırım</h2>
+  <p class="lead">Skill'i adıyla çağırırsın. Yolunu hiçbir yere yazmazsın; ajan adından bulur.</p>
+  <div class="grid g3">
+    <div class="card"><h3>1. Adıyla çağır</h3><p><code>/write-spec durum filtresi ekle</code>. Terminalde <code>/</code> yazınca liste açılır.</p></div>
+    <div class="card"><h3>2. Ya da düz cümle</h3><p>"Şu hatayı düzelt" dersen ajan uygun skill'i açıklamasından kendisi seçer.</p></div>
+    <div class="card"><h3>3. Yol verme</h3><p>Plan dosyasına ya da prompt'a skill'in dosya yolunu yazmana gerek yok.</p></div>
+  </div>
+  <h3 style="margin:22px 0 4px">Büyük bir iş, baştan sona</h3>
+  <div class="flow tight">
+    <div class="step human"><span class="n">1</span><b>Branch aç</b><span><code>feat/durum-filtresi</code>. İz klasörü bu adla açılır.</span></div>
+    <div class="step"><span class="n">2</span><b><code>/write-spec …</code></b><span>İsteği yaz. Belirsizse sorar. <code>spec.md</code> (+ <code>plan.md</code>) yazar.</span></div>
+    <div class="step human"><span class="n">3</span><b>Spec'i oku</b><span>Düzelt ya da düzelttir. Onay senin.</span></div>
+    <div class="step"><span class="n">4</span><b><code>/implement-task</code></b><span>Spec'i branch'ten bulur. Kod + test + kapılar + <code>report.md</code>.</span></div>
+    <div class="step gate"><span class="n">5</span><b>Review</b><span><code>/simplify</code> · <code>/code-review</code> · reviewer · <code>/security-review</code></span></div>
+    <div class="step"><span class="n">6</span><b><code>/verify-ui</code></b><span>Ekran değiştiyse.</span></div>
+    <div class="step human"><span class="n">7</span><b><code>/commit-and-pr</code></b><span>İstediğinde.</span></div>
+  </div>
+  <table style="margin-top:10px">
+    <tr><th>Durum</th><th>Terminale yaz</th></tr>
+    <tr><td>Küçük iş (tek dosya, basit hata)</td><td>Düz cümle: <code>login butonunun metnini düzelt</code> — spec gerekmez</td></tr>
+    <tr><td>Büyük ya da birden çok repoya dokunan iş</td><td><code>/write-spec sipariş listesine durum filtresi ekle</code></td></tr>
+    <tr><td>Yazılmış spec'i uygulat</td><td><code>/implement-task</code> ya da <code>/implement-task agent-work/feat-durum-filtresi/spec.md</code></td></tr>
+    <tr><td>Yeni endpoint</td><td><code>/new-endpoint siparişleri duruma göre listeleyen GET ucu</code></td></tr>
+    <tr><td>Tablo / kolon değişikliği</td><td><code>/db-migration orders tablosuna status kolonu</code></td></tr>
+    <tr><td>Bir ekranı kontrol et</td><td><code>/verify-ui /orders</code></td></tr>
+    <tr><td>Sürüm öncesi tam tarama</td><td><code>/ui-check</code></td></tr>
+    <tr><td>Tasarım eleştirisi / cila</td><td><code>/impeccable critique sipariş listesi</code> · <code>/impeccable polish …</code></td></tr>
+    <tr><td>Kodu gözden geçir</td><td><code>/review</code> · <code>/simplify</code> · <code>/code-review</code> · <code>/security-review</code></td></tr>
+    <tr><td>Commit / PR</td><td><code>/commit-and-pr</code></td></tr>
+  </table>
+  <div class="callout warn">Karıştırma: Claude'un <b>plan modu</b> (Shift+Tab) ayrı bir şey. <code>plan.md</code> ise <code>/write-spec</code>'in yazdığı iş adımları dosyası. Kit belgelerindeki <code>$write-spec</code> yazımı skill'e atıftır; Claude'da <code>/write-spec</code> yazılır.</div>
+</section>
+
+<!-- 17 -->
+<section class="slide" id="reviewerlar" data-title="Reviewer ajanları">
+  <div class="kicker">Reviewer'lar</div>
+  <h2>Reviewer ajanları — soğuk göz</h2>
+  <p class="lead">Kodu yazan değil, sadece diff'i ve amacı gören ayrı bir ajan. Dosya değiştirmez, bulgu döner.</p>
+  <div class="grid g3">
+    <div class="card"><h3>backend-reviewer</h3><ul><li>sorgu çağıranın kapsamıyla mı sınırlı</li><li>izin tanımlı mı</li><li>katmanlar, async hatalar</li><li>migration, sözleşmeler, testler</li></ul></div>
+    <div class="card"><h3>frontend-reviewer</h3><ul><li>menü, route ve buton aynı yetkiyi mi okuyor</li><li>tek kaynaklı listeler, her dilde çeviri</li><li>tasarım sistemi kuralları, erişilebilirlik</li><li>TypeScript sıkılığı, gereksiz karmaşıklık</li></ul></div>
+    <div class="card"><h3>security-reviewer</h3><ul><li>kapsam ve izolasyon</li><li>yetki ve devretme kuralları</li><li>log, prompt, audit satırında kişisel veri</li><li>rate limit, cache iptali, bağımlılık riski</li></ul></div>
+  </div>
+  <div class="callout">Bulgu biçimi hep aynı: önem sırası (P0–P3), başlık, <code>dosya:satır</code>, ne bozuluyor, nasıl düzelir. "Bulgu yok" da geçerli sonuç. Copilot'ta aynı ajanlar <code>.github/agents</code> ikizleriyle çalışır.</div>
+</section>
+
+<!-- 18 -->
+<section class="slide" id="araclar" data-title="Araçlar haritası">
+  <div class="kicker">Araçlar</div>
+  <h2>Kullanılan araçların haritası</h2>
+  <p class="lead">Kim, ne için, nerede.</p>
+  <table>
+    <tr><th>Araç</th><th>Ne için</th><th>Nerede / nasıl</th></tr>
+    <tr><td><b>Claude Code</b></td><td>Yürütücü: işi parçalar, uygular, review turunu yönetir.</td><td>Workspace kökünden ya da repodan <code>claude</code>. Skill + ajan + hook'ları okur.</td></tr>
+    <tr><td><b>GitHub Copilot</b></td><td>Aynı rol VS Code'da; bulutta coding agent uygulayıcı olur.</td><td><code>.github/</code>, <code>.vscode/</code>, <code>workspace.code-workspace</code></td></tr>
+    <tr><td><b>impeccable</b></td><td>Tasarım kalitesi: eleştiri, cila + düzenlemede tasarım dedektörü.</td><td>Frontend skill'i + hook. <code>docs/DESIGN.md</code>'ye göre bakar.</td></tr>
+    <tr><td><b>Playwright</b> (<code>@playwright/test</code>)</td><td>e2e testler: ekranları otomatik gezer.</td><td>Frontend'de <code>e2e/</code>, <code>npm run test:e2e</code></td></tr>
+    <tr><td><b>Playwright MCP</b></td><td>Ajanın tarayıcı eli (Chrome yoksa).</td><td><code>.mcp.json</code> (Claude), <code>.vscode/mcp.json</code> (Copilot)</td></tr>
+    <tr><td><b>Claude in Chrome</b></td><td>Ajanın gerçek tarayıcıda ekranı açıp kontrol etmesi.</td><td>Chrome eklentisi; <code>verify-ui</code> önce bunu dener</td></tr>
+    <tr><td><b>Vitest</b></td><td>Frontend birim/bileşen testleri.</td><td>Commit kapısında <code>vitest run</code></td></tr>
+    <tr><td><b>pytest</b></td><td>Backend testleri.</td><td>pre-commit'te yerel hook</td></tr>
+    <tr><td><b>ruff</b> · <b>pylint</b></td><td>Python lint + biçim; pylint yalnız hata.</td><td>Format hook'u, pre-commit</td></tr>
+    <tr><td><b>eslint</b> · prettier · <code>tsc</code></td><td>Frontend lint, biçim (repo kullanıyorsa), tip kontrolü.</td><td>Format hook'u, lint-staged</td></tr>
+    <tr><td><b>pre-commit</b> / <b>husky + lint-staged</b></td><td>Commit anında kapı: ajan unutsa da git durdurur.</td><td>Backend: pre-commit. Frontend: husky (<code>npm install</code> bağlar)</td></tr>
+    <tr><td><b>GitHub Actions</b></td><td>Reponun kendi CI'ı + <code>pr-evidence.yml</code> + <code>copilot-setup-steps.yml</code>.</td><td><code>.github/workflows/</code>. Şablon yalnız bu ikisini getirir; CI yoksa bootstrap insana sorar.</td></tr>
+    <tr><td><b>gh</b> CLI</td><td>PR açma, CI durumunu okuma.</td><td>Ajan kullanır; merge komutu her seferinde onay ister.</td></tr>
+    <tr><td><b>install / link-repo / check-drift</b></td><td>Yapıyı kurar ve doğru durduğunu kanıtlar.</td><td><code>install.sh</code>, kit'in <code>scripts/</code> klasörü</td></tr>
+  </table>
+</section>
+
+<!-- 19 -->
+<section class="slide" id="ui-dogrulama" data-title="UI doğrulama katmanları">
+  <div class="kicker">UI ve testler</div>
+  <h2>Bir ekranın doğru olduğunu nasıl kanıtlıyoruz</h2>
+  <p class="lead">"Derlendi, testler yeşil" yetmez. Dört katman var; her biri öbürünün göremediğini görür.</p>
+  <div class="flow">
+    <div class="step"><span class="n">1</span><b>Vitest</b><span>Bileşen ve mantık testleri. Hızlı. Her commit'te.</span></div>
+    <div class="step gate"><span class="n">2</span><b>Playwright e2e</b><span>Script tüm ekranları gezer: açılıyor mu, konsol hatası, taşma, üst üste binme, kaydırma. Ajansız.</span></div>
+    <div class="step"><span class="n">3</span><b>verify-ui</b><span>Ajan gerçek tarayıcıda: menüden tıklayarak ekrana ulaşır, butona basar, sonucu görür.</span></div>
+    <div class="step"><span class="n">4</span><b>ui-check</b><span>Sürüm öncesi: ekran × rol × genişlik × dil matrisi, bug listesi.</span></div>
+  </div>
+  <div class="grid g2" style="margin-top:10px">
+    <div class="card"><h3>Script neyi yakalar</h3><p>Her ekranda aynı mekanik kontroller. Yorulmaz, atlamaz. Ama "buton doğru işi yaptı mı" diyemez.</p></div>
+    <div class="card"><h3>Ajan neyi yakalar</h3><p>Etkileşim, dialoglar, rol bazlı yetki, her dil, "işlev gerçekten çalışıyor mu". Script'in bıraktığını tamamlar. Tarayıcı yoksa "browser smoke pending" der, iddia etmez.</p></div>
+  </div>
+</section>
+
+<!-- 20 -->
+<section class="slide" id="e2e" data-title="Playwright e2e nasıl çalışıyor">
+  <div class="kicker">e2e</div>
+  <h2>Playwright e2e: nerede, nasıl çalışıyor</h2>
+  <p class="lead">Ekran listesi tek bir tablodan geliyor: <code>docs/screens.md</code>. Şablon frontend'e iskeleti getirir, bootstrap bağlar.</p>
+  <div class="flow">
+    <div class="step"><span class="n">1</span><b><code>docs/screens.md</code></b><span>Ekran envanteri: route, kapı, roller, ekranda ne görünmeli. Router ve menüden doldurulur.</span></div>
+    <div class="step"><span class="n">2</span><b><code>e2e/screens.ts</code></b><span>Tabloyu okur, gezilecek route'ları çıkarır.</span></div>
+    <div class="step"><span class="n">3</span><b><code>e2e/auth.setup.ts</code></b><span>Test kişisiyle giriş yapar. <code>E2E_EMAIL</code> / <code>E2E_PASSWORD</code> ortamdan, git'te değil.</span></div>
+    <div class="step"><span class="n">4</span><b><code>e2e/smoke.spec.ts</code></b><span>Her ekranı masaüstü + mobilde açar, <code>e2e/probes.ts</code> kontrollerini koşar.</span></div>
+    <div class="step human"><span class="n">5</span><b>Sonuç</b><span>Liste + HTML rapor; hatada ekran görüntüsü ve trace.</span></div>
+  </div>
+  <div class="callout">Çalıştırmak: frontend klasöründe <code>npm run test:e2e</code>. Dev server'ı kendisi açar (açıksa onu kullanır). Başka bir ortama karşı: <code>E2E_BASE_URL=…</code>. Giriş durumu <code>e2e/.auth/</code>'da: git'e girmez, ajan okuyamaz.</div>
+  <div class="callout warn">Yeni ekran eklersen <code>docs/screens.md</code>'ye satır ekle. Yoksa e2e o ekranı hiç gezmez; Stop hook'u da hatırlatır. Tablo boşken e2e yüksek sesle kırılır.</div>
+</section>
+
+<!-- 21 -->
+<section class="slide" id="impeccable" data-title="impeccable">
+  <div class="kicker">Tasarım</div>
+  <h2>impeccable ne işe yarıyor</h2>
+  <p class="lead">Testler arayüzün <b>çalıştığını</b> kanıtlar. impeccable doğru <b>göründüğünü</b> kontrol eder.</p>
+  <div class="grid g2">
+    <div class="card"><h3>1. Skill olarak</h3><p>Sen ya da ajan çağırırsın. Alt komutları var:</p><ul><li><code>audit</code> / <code>critique</code> — tasarım eleştirisi</li><li><code>polish</code> — son cila</li><li><code>layout</code>, <code>typeset</code>, <code>colorize</code> — düzen, yazı, renk</li><li><code>harden</code>, <code>adapt</code> — kenar durumları, mobil</li></ul></div>
+    <div class="card"><h3>2. Hook olarak (dedektör)</h3><p>Frontend'de bir UI dosyası değişince kendiliğinden koşar. Bariz hataları anında söyler. LLM kullanmaz, deterministik. Claude'da <code>settings.json</code>, Copilot'ta <code>.github/hooks/impeccable.json</code>.</p></div>
+  </div>
+  <div class="flow" style="margin-top:14px">
+    <div class="step"><span class="n">1</span><b>UI dosyası düzenlenir</b><span><code>.tsx</code>, <code>.jsx</code>, <code>.css</code>…</span></div>
+    <div class="step hook"><span class="n">2</span><b>impeccable hook</b><span>Dedektör değişen dosyaya bakar.</span></div>
+    <div class="step"><span class="n">3</span><b>Uyarı</b><span>Ajan uyarıyı görür, düzeltir.</span></div>
+  </div>
+  <div class="grid g3" style="margin-top:6px">
+    <div class="card"><h3>Neye göre bakar</h3><p><code>docs/DESIGN.md</code>: markanın renkleri, yazıları, kuralları. Boşsa impeccable dişsiz kalır.</p></div>
+    <div class="card"><h3>Nereden geldi</h3><p>Açık kaynak (Apache-2.0), kit'te tek kopya. Elle düzenlenmez, <code>npx impeccable update</code> ile güncellenir. Karar: ADR 0002.</p></div>
+    <div class="card"><h3>Bilmen gereken</h3><p>Hook Node 22+ ister. Workspace kökünden başlatınca hook çalışmaz (kök ayarında yok); skill yine kullanılabilir.</p></div>
+  </div>
+</section>
+
+<!-- 22 -->
+<section class="slide" id="kapilar" data-title="Kalite kapıları">
+  <div class="kicker">Kapılar</div>
+  <h2>Kod nereden nereye, hangi kapıdan geçiyor</h2>
+  <p class="lead">Her kapı bir öncekinin kaçırdığını yakalar.</p>
+  <div class="flow">
+    <div class="step hook"><span class="n">1</span><b>Düzenleme</b><span>format hook'u, impeccable hook'u</span></div>
+    <div class="step"><span class="n">2</span><b>Commit</b><span>pre-commit / husky: lint, format, test, özel anahtar ve büyük dosya bekçisi.</span></div>
+    <div class="step gate"><span class="n">3</span><b>Push / PR</b><span>PR kapısı hook'u: review'lar koştu mu</span></div>
+    <div class="step gate"><span class="n">4</span><b>CI</b><span>Reponun CI'ı; <code>pr-evidence.yml</code> açıklama</span></div>
+    <div class="step human"><span class="n">5</span><b>Merge</b><span>İnsan karar verir</span></div>
+    <div class="step"><span class="n">6</span><b>Deploy</b><span>Reponun kendi akışı; platform rehberinin "Branches &amp; deploy" bölümünde yazar</span></div>
+  </div>
+  <div class="callout warn"><code>--no-verify</code> ile commit kapısını atlamak, <code># noqa</code> / <code>eslint-disable</code> serpiştirmek, test atlamak yasak. Yanlış bir kural varsa ADR yazılır, config değiştirilmez.</div>
+  <div class="callout">Kapı tek olmalı: repoda zaten lint ya da commit hook'u varsa bootstrap ikisini birleştirir. İki kapı, bir kapıdan kötüdür.</div>
+</section>
+
+<!-- 23 -->
+<section class="slide" id="izinler" data-title="İzinler">
+  <div class="kicker">Güvenlik</div>
+  <h2>Ajan neye dokunabilir</h2>
+  <p class="lead"><code>.claude/settings.json</code> üç liste tutar. Copilot'ta karşılığı <code>.vscode/settings.json</code>.</p>
+  <div class="grid g3">
+    <div class="card" style="border-color:var(--ok)"><h3 style="color:var(--ok)">İzin ver (sormadan)</h3><ul><li>git status / diff / log</li><li>testler, lint, format</li><li><code>.env.example</code> okuma/düzenleme</li><li><code>check-drift</code> (kökten)</li></ul></div>
+    <div class="card" style="border-color:var(--warn)"><h3 style="color:var(--warn)">Sor</h3><ul><li>commit, push, PR, <b>merge</b></li><li>curl, paket kurulumu</li><li>veritabanı istemcisi, migration uygulama</li><li>hook, workflow, husky, <code>.vscode</code> düzenleme; <code>humans/</code> okuma</li></ul></div>
+    <div class="card" style="border-color:var(--bad)"><h3 style="color:var(--bad)">Asla</h3><ul><li><code>.env</code> türevleri, <code>config/**</code>, anahtarlar, bulut kimlikleri, tfstate</li><li><code>e2e/.auth/</code></li><li><code>rm -rf</code>, force push, reset --hard</li><li>kit dosyalarını repo içinden düzenleme; impeccable'ı elle düzenleme</li></ul></div>
+  </div>
+  <div class="callout">Kişisel izinler <code>.claude/settings.local.json</code>'a (git'e girmez). Oraya asla şifre yazılmaz. Settings kopyası kit'e aittir: değişiklik kit'te yapılır, <code>--refresh</code> ile iner.</div>
+</section>
+
+<!-- 24 -->
+<section class="slide" id="prensipler" data-title="12 prensip">
+  <div class="kicker">Kurallar</div>
+  <h2>Ajanın her istekte gördüğü 12 prensip</h2>
+  <p class="lead">İlk beşi Andrej Karpathy'nin LLM ile kod yazma prensipleri.</p>
+  <div class="grid g4">
+    <div class="card"><h3>1 · Önce düşün</h3><p>Varsayma, sor. İki okuma varsa ikisini sun. İtiraz et.</p></div>
+    <div class="card"><h3>2 · "Bitti"yi tanımla</h3><p>Hangi komut kanıtlayacak? Koşmadan "çalışıyor" deme.</p></div>
+    <div class="card"><h3>3 · Kapılar yeşil</h3><p>Hepsi, sayısıyla. Kapı zayıflatılmaz.</p></div>
+    <div class="card"><h3>4 · Basit</h3><p>Gerek var mı → repoda var mı → stdlib → … → en az kod.</p></div>
+    <div class="card"><h3>5 · Cerrahi</h3><p>Her değişen satır isteğe bağlanır. Komşu koda dokunma.</p></div>
+    <div class="card"><h3>6 · Kök neden</h3><p>Semptomu değil, hatanın doğduğu yeri düzelt.</p></div>
+    <div class="card"><h3>7 · Test</h3><p>Her davranış değişikliğine test. Bug'da önce kırmızı.</p></div>
+    <div class="card"><h3>8 · Sınırda doğrula</h3><p>Dışarıdan gelen veri typed modele girer.</p></div>
+    <div class="card"><h3>9 · Sırlar</h3><p>Okunmaz, yazdırılmaz.</p></div>
+    <div class="card"><h3>10 · İnsana kalanı yaz</h3><p>Sunucu ayarı, secret, elle migration → rapora + PR notuna + <code>manual-actions.md</code>.</p></div>
+    <div class="card"><h3>11 · Karar = ADR</h3><p>Yerleşen karar aynı PR'da <code>docs/decisions/</code>'a.</p></div>
+    <div class="card"><h3>12 · Başkasına ait metin</h3><p>Hukuk, uyum, sözleşme metinlerine dokunulmaz.</p></div>
+  </div>
+</section>
+
+<!-- 25 -->
+<section class="slide" id="belgeler" data-title="Belgeler ve taşıma kuralları">
+  <div class="kicker">Belgeler</div>
+  <h2>Belgeler nerede durur, eskiler nasıl taşınır</h2>
+  <p class="lead">Ajanın okuduğu belge repoda, insanın okuduğu belge <code>humans/</code>'ta.</p>
+  <div class="cols">
+    <div class="tree"><span class="k">agent-kit/platform/</span>     <span class="c">workspace geneli</span>
+├─ AGENTS.md               <span class="c">her istekte yüklenir</span>
+├─ SECURITY.md             <span class="c">güven sınırları, ortak sırlar</span>
+├─ DEPLOYMENT.md           <span class="c">ortamlar, CI/CD</span>
+└─ SCHEMA.md               <span class="c">ortak veri modeli (yoksa sil)</span>
+<span class="k">&lt;repo&gt;/docs/</span>              <span class="c">her repoda aynı düzen</span>
+├─ engineering/            <span class="c">nasıl: mimari, test, güvenlik…</span>
+├─ domain/                 <span class="c">ne: sözlük, iş kuralları</span>
+└─ decisions/              <span class="c">neden: numaralı ADR</span>
+<span class="k">agent-kit/humans/</span>          <span class="c">insanlar için</span>
+└─ archive/&lt;repo&gt;/        <span class="c">taşınan eski belgeler</span></div>
+    <div class="grid">
+      <div class="card"><h3>Platform belgeleri boş gelir</h3><p><code>SECURITY</code>, <code>DEPLOYMENT</code>, <code>SCHEMA</code> birer <code>PLACEHOLDER</code>. Workspace bootstrap'ı koddan doldurur; birden çok reponun ortak gerçeği tek kopyadır.</p></div>
+      <div class="card"><h3>Kural 1: belgeye değil koda güven</h3><p>Belgeler koddan geri kalır. Taşınan her iddia koda karşı doğrulanır; çelişkide kod kazanır, doğrulanamayan <code>TODO(confirm)</code> olur.</p></div>
+      <div class="card"><h3>Kural 2: eski belge arşive, link yok</h3><p>İçeriği <code>docs/</code>'a geçen belge repodan çıkar, <code>humans/archive/&lt;repo&gt;/</code>'a gider (tek repoda silinir, git saklar). Yeni belge ve kod oraya link vermez.</p></div>
+    </div>
+  </div>
+  <div class="callout">Bayatlayan insan belgesi yeniden yazılmaz: başına kısa bir "Güncel durum" notu eklenir, doğrusu repo <code>docs/</code>'ta. 2 MB üstü dosya git'e girmez.</div>
+</section>
+
+<!-- 26 -->
+<section class="slide" id="kurulum" data-title="Kurulum ve bakım">
+  <div class="kicker">Kurulum</div>
+  <h2>Kurulum ve bakım</h2>
+  <p class="lead">Şablona bir kez dokunulur. Ekip sonra yalnız kendi <code>agent-kit</code> reposuyla çalışır.</p>
+  <div class="tree"><span class="c"># 1. şablonu klonla, hedefe kur (repo ya da workspace)</span>
+git clone &lt;şablon adresi&gt; ~/kod/ai-transformation
+~/kod/ai-transformation/install.sh ~/kod/shop
+<span class="c"># 2. workspace ise: agent-kit yeni bir git reposu — ekibin sunucusuna push'la</span>
+git -C ~/kod/shop/agent-kit remote add origin &lt;url&gt; &amp;&amp; git -C ~/kod/shop/agent-kit push -u origin main
+<span class="c"># 3. ekip arkadaşı (şablona dokunmaz)</span>
+mkdir shop &amp;&amp; cd shop &amp;&amp; git clone &lt;agent-kit adresi&gt; agent-kit &amp;&amp; agent-kit/install.sh
+<span class="c"># 4. kökten başlat</span>
+cd ~/kod/shop &amp;&amp; claude</div>
+  <div class="grid g3" style="margin-top:14px">
+    <div class="card"><h3>Her şey yerinde mi</h3><p><code>install.sh &lt;hedef&gt; --check</code> ya da <code>agent-kit/scripts/check-drift.sh</code> → <code>check-drift: clean</code></p></div>
+    <div class="card"><h3>Kit güncellendi</h3><p>Tek repo: şablonu çek → <code>install.sh &lt;repo&gt; --refresh</code>. Workspace: <code>agent-kit/install.sh --refresh</code>. Yalnız kit'e ait kopyalar yenilenir.</p></div>
+    <div class="card"><h3>Yeni repo / bozuk link</h3><p><code>root/workspace.conf</code>'a <code>repo &lt;klasör&gt; &lt;profil&gt;</code> satırı, sonra <code>agent-kit/install.sh</code>. Tekrar çalıştırmak güvenli.</p></div>
+  </div>
+  <div class="callout">Şablonun kendi testi: <code>tests/selftest.sh</code> tek frontend, tek backend ve workspace kurulumlarını geçici klasörlerde yapar; kapıyı, drift'i, <code>--refresh</code>'i ve tekrar kurulumu dener. CI'da Linux ve macOS'ta koşar.</div>
+</section>
+
+<!-- 27 -->
+<section class="slide" id="ozet" data-title="Kısa özet">
+  <div class="kicker">Özet</div>
+  <h2>Hatırlanacak 8 şey</h2>
+  <div class="grid g2">
+    <div class="card"><h3>1. Hedefi seç</h3><p>Tek repo = kopya. Birbirine dokunan repolar = workspace + <code>agent-kit</code>.</p></div>
+    <div class="card"><h3>2. Bootstrap'ı koştur</h3><p>PLACEHOLDER'lar koddan dolar; bilinmeyen <code>TODO(confirm)</code>.</p></div>
+    <div class="card"><h3>3. Normal konuş</h3><p>"Şunu ekle." Ajan skill'i kendisi seçer. Büyük iş = <code>/write-spec</code>.</p></div>
+    <div class="card"><h3>4. Kapı otomatik</h3><p>Claude'da review'lar koşmadan push/PR yok. Copilot'ta CI tutar.</p></div>
+    <div class="card"><h3>5. Ekran değiştiyse</h3><p><code>/verify-ui</code> + gerekirse <code>npm run test:e2e</code>.</p></div>
+    <div class="card"><h3>6. Merge senin</h3><p>Ajan önerir, sen onaylarsın.</p></div>
+    <div class="card"><h3>7. Kural değişecekse</h3><p>Kit'te değiştir, repolarda değil. Sonra <code>--refresh</code>.</p></div>
+    <div class="card"><h3>8. Emin değilsen</h3><p><code>--check</code> / <code>check-drift.sh</code> ve bu sunum. Ayrıntı: <code>humans/ai-standards/</code>.</p></div>
+  </div>
+</section>
+
+</main>
+</div>
+<button class="theme" id="theme" type="button" aria-label="Tema">◐ Tema</button>
+<script>
+(function(){
+  var slides=[].slice.call(document.querySelectorAll('.slide'));
+  var box=document.getElementById('navlinks');
+  slides.forEach(function(s,i){
+    var a=document.createElement('a'); a.href='#'+s.id; a.textContent=(i+1)+'. '+(s.dataset.title||s.id); box.appendChild(a);
+  });
+  var links=[].slice.call(box.querySelectorAll('a'));
+  function current(){
+    var y=window.scrollY+window.innerHeight*0.35, idx=0;
+    slides.forEach(function(s,i){ if(s.offsetTop<=y) idx=i; });
+    return idx;
+  }
+  function mark(){ var c=current(); links.forEach(function(a,i){ a.classList.toggle('on',i===c); }); }
+  window.addEventListener('scroll',mark,{passive:true}); mark();
+  document.addEventListener('keydown',function(e){
+    if(e.target.closest&&e.target.closest('input,textarea')) return;
+    var c=current(), n=null;
+    if(['ArrowRight','ArrowDown','PageDown',' '].indexOf(e.key)>=0) n=Math.min(c+1,slides.length-1);
+    if(['ArrowLeft','ArrowUp','PageUp'].indexOf(e.key)>=0) n=Math.max(c-1,0);
+    if(n!==null){ e.preventDefault(); slides[n].scrollIntoView({behavior:'smooth'}); }
+  });
+  var btn=document.getElementById('theme'), root=document.documentElement;
+  try{ var saved=localStorage.getItem('kit-sunum-tema'); if(saved) root.dataset.theme=saved; }catch(_){}
+  btn.addEventListener('click',function(){
+    var dark=root.dataset.theme? root.dataset.theme==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme=dark?'light':'dark';
+    try{ localStorage.setItem('kit-sunum-tema',root.dataset.theme); }catch(_){}
+  });
+})();
+</script>
+</body>
+</html>

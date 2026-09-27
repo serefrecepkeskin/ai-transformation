@@ -1,0 +1,9 @@
+# Word/Office lock files
+~$*
+# macOS
+.DS_Store
+# python
+__pycache__/
+# personal Claude settings and the agent work trail are never committed
+.claude/settings.local.json
+agent-work/

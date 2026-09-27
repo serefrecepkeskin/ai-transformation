@@ -1,0 +1,8 @@
+# Per-developer overrides and machine-local artifacts — never committed.
+# The shared config (config.json), the design sidecar (design.json) and
+# recorded critiques ARE committed: they are team knowledge.
+config.local.json
+hook.cache.json
+hook.pending.json
+live/
+mocks/

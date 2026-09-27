@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git blame:*)",
+      "Bash(git ls-files:*)",
+      "Bash(git branch --show-current)",
+      "Bash(grep:*)",
+      "Bash(ls:*)",
+      "Bash(wc:*)",
+      "Bash(bash -n:*)",
+      "Bash(shellcheck:*)",
+      "Bash(python3 -m py_compile:*)",
+      "Bash(scripts/link-repo.sh * --check)",
+      "Bash(scripts/link-repo.sh --root --check)",
+      "Bash(scripts/link-repo.sh --kit --check)",
+      "Bash(python3 scripts/sync-copilot-agents.py * --check)"
+    ],
+    "ask": [
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)",
+      "Bash(scripts/link-repo.sh:*)",
+      "Bash(npx impeccable:*)",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Read(humans/**)",
+      "Edit(hooks/**)",
+      "Edit(.claude/settings.local.json)",
+      "Edit(.pre-commit-config.yaml)",
+      "Edit(.husky/**)",
+      "Edit(.mcp.json)",
+      "Edit(.vscode/**)",
+      "Edit(.github/workflows/**)",
+      "Edit(.github/hooks/**)",
+      "Edit(**/.claude/settings.local.json)",
+      "Bash(gh pr merge:*)"
+    ],
+    "deny": [
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(**/*.p12)",
+      "Read(**/*.pfx)",
+      "Read(**/*credential*)",
+      "Read(**/.npmrc)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.azure/**)",
+      "Read(~/.config/gcloud/**)",
+      "Read(~/.kube/config)",
+      "Edit(skills/impeccable/**)",
+      "Bash(rm -rf:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git reset --hard:*)",
+      "Read(~/.docker/config.json)",
+      "Edit(.claude/settings.json)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'h=\"$CLAUDE_PROJECT_DIR/hooks/pr-gate.sh\"; [ -x \"$h\" ] && exec \"$h\"; cat >/dev/null'",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

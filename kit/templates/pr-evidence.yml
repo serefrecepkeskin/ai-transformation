@@ -1,0 +1,33 @@
+# Copied into every repo by the agent kit (scripts/link-repo.sh) — edit the template in the kit, not this copy.
+# The CI half of the PR gate: Claude's pr-gate hook checks the reviews before a push/PR; this check makes the same
+# promise visible for every PR, whoever opened it (a person, Copilot, Claude). $commit-and-pr writes these sections.
+name: PR evidence
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  evidence:
+    # Deploy/promotion PRs carry no review of their own. Adjust to the workspace's promotion flow (the bootstrap
+    # prompt asks); the default skips PRs into 'production' and 'release/*'.
+    if: github.base_ref != 'production' && !startsWith(github.base_ref, 'release/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: PR body carries the verification and the review
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          missing=""
+          printf '%s' "$BODY" | grep -q '^## Nasıl doğrulandı' || missing="$missing\n- '## Nasıl doğrulandı' (commands + the number that proves them)"
+          printf '%s' "$BODY" | grep -q '^## Self-review' || missing="$missing\n- '## Self-review' (reviewer findings and what was done)"
+          printf '%s' "$BODY" | grep -qE '(backend|frontend|security)-reviewer|/code-review|/security-review' \
+            || missing="$missing\n- the reviews that ran (*-reviewer, /code-review, /security-review) named in Self-review"
+          if [ -n "$missing" ]; then
+            printf "The PR description lacks:$missing\nFix it by editing the PR description; see the commit-and-pr skill.\n"
+            exit 1
+          fi
+          echo "PR evidence present."

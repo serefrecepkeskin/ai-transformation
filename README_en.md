@@ -147,6 +147,10 @@ difference. After editing an agent, `python3 sync-copilot-agents.py backend`
 copy `.claude/skills/impeccable/` and `.github/agents/impeccable-*.agent.md`
 back under `frontend/` (ADR 0002).
 
+**Downstream:** [virahr agent-kit](https://github.com/hraigit/agent-kit) derives from this template —
+it distributes by symlink instead of copying, never commits `agent-work/`, and has a gate that asks for review
+evidence before a PR. The simple lessons it sent back: `fix/lessons-from-vira`.
+
 ## The lint gate — how it arrives in a repo that has none
 
 Each profile brings **its own ecosystem's runner**; no second toolchain is

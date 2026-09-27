@@ -143,6 +143,10 @@ farkı gösterir. Bir ajanı düzenleyince `python3 sync-copilot-agents.py backe
 `.github/agents/impeccable-*.agent.md`'yi `frontend/` altına geri kopyala
 (ADR 0002).
 
+**Downstream:** [virahr agent-kit](https://github.com/hraigit/agent-kit) bu şablondan türedi —
+kopyalamak yerine symlink'le dağıtır, `agent-work/` commit'lenmez, PR açmadan önce review kanıtı arayan bir kapısı
+var. Oradan geri gelen basit dersler: `fix/lessons-from-vira`.
+
 ## Lint kapısı — projede yoksa nasıl geliyor
 
 Her profil **kendi ekosisteminin aracını** getirir; ikinci bir toolchain

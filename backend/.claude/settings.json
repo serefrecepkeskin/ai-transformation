@@ -1,5 +1,5 @@
 {
-  "$schema": "https://json.schemastudio.com/claude-code-settings.json",
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
     "allow": [
       "Bash(git status:*)",
@@ -7,7 +7,6 @@
       "Bash(git log:*)",
       "Bash(git show:*)",
       "Bash(git branch:*)",
-      "Bash(git add:*)",
       "Bash(rg:*)",
       "Bash(ruff check:*)",
       "Bash(ruff format:*)",
@@ -18,8 +17,8 @@
       "Bash(pre-commit run:*)",
       "Read(default.ini)",
       "Edit(default.ini)",
-      "Read(env.example)",
-      "Edit(env.example)"
+      "Read(.env.example)",
+      "Edit(.env.example)"
     ],
     "ask": [
       "Bash(curl:*)",
@@ -30,7 +29,12 @@
     ],
     "deny": [
       "Read(.env)",
-      "Read(.env.*)",
+      "Read(.env.local)",
+      "Read(.env.*.local)",
+      "Read(.env.development)",
+      "Read(.env.production)",
+      "Read(.env.staging)",
+      "Read(.env.test)",
       "Read(**/*.pem)",
       "Read(**/*.key)",
       "Read(**/*.p12)",
@@ -45,11 +49,18 @@
       "Read(~/.config/gcloud/**)",
       "Read(~/.kube/config)",
       "Edit(.env)",
-      "Edit(.env.*)",
+      "Edit(.env.local)",
+      "Edit(.env.*.local)",
+      "Edit(.env.development)",
+      "Edit(.env.production)",
+      "Edit(.env.staging)",
+      "Edit(.env.test)",
       "Edit(config/**)",
       "Edit(secrets/**)",
       "Bash(rm -rf:*)",
       "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(gh pr merge:*)",
       "Bash(git reset --hard:*)"
     ]
   },
@@ -60,7 +71,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/format-changed.sh",
+            "command": "sh -c 'h=\"$CLAUDE_PROJECT_DIR/.claude/hooks/format-changed.sh\"; [ -x \"$h\" ] && exec \"$h\"; cat >/dev/null'",
             "timeout": 60
           }
         ]
@@ -71,7 +82,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/remind-docs.sh",
+            "command": "sh -c 'h=\"$CLAUDE_PROJECT_DIR/.claude/hooks/remind-docs.sh\"; [ -x \"$h\" ] && exec \"$h\"; cat >/dev/null'",
             "timeout": 30
           }
         ]

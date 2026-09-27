@@ -5,6 +5,13 @@ description: Writes commits and PR/MR titles and descriptions in the company for
 
 # Commit & PR format
 
+## Before the commit
+
+- Every gate in `AGENTS.md → Commands` is green, output read. A red gate is fixed, never skipped: no
+  `--no-verify`, no new `noqa` / `eslint-disable` to get past it.
+- Stage only the files of this change, by path (`git add <paths>`), never `git add -A` — other work may be
+  sitting in the tree.
+
 ## Commit
 
 - **Title (line 1): English, conventional commit** —
@@ -13,6 +20,7 @@ description: Writes commits and PR/MR titles and descriptions in the company for
 - **Body: Turkish** — why the change was made and any noteworthy decision,
   2-5 short lines. Skip the body only for trivial changes.
 - One logical change per commit; never mix refactor with behavior change.
+- **No `Co-Authored-By:` or any other AI/tool trailer.**
 
 ```
 feat(orders): add cancel endpoint
@@ -23,6 +31,8 @@ iadesi servis katmanında yapılıyor; kural business-rules.md'de.
 
 ## PR / MR
 
+- **Base**: the branch the work targets; if a PR for this branch is already open, push to it instead of
+  opening another. Unsure → ask. **Merging is always a person's decision** — never merge.
 - **Title: the same English conventional commit** — squash merge makes it the
   released commit.
 - **Description: Turkish**, with these sections:

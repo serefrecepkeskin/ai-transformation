@@ -50,7 +50,11 @@ if [ -n "$py" ]; then
   else RUFF=""; fi
   if [ -n "$RUFF" ]; then
     # shellcheck disable=SC2086
-    run "$py" $RUFF format; run "$py" $RUFF check --fix
+    # Imports only, then format: a full `check --fix` between two edits deletes the import the agent just
+    # added before the code using it lands (F401 under select=ALL). The full fix runs at commit time;
+    # FULL_FIX=1 restores it here.
+    if [ "${FULL_FIX:-0}" = 1 ]; then run "$py" $RUFF check --fix; else run "$py" $RUFF check --fix --select I; fi
+    run "$py" $RUFF format
   fi
 fi
 

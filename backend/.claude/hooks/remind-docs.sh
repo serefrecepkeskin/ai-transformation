@@ -17,8 +17,9 @@ if [ -n "$src" ] && [ -z "$docs" ]; then
   echo "Reminder: source/config changed but docs/ was not updated. If this change affects architecture, conventions or the stack, update the doc and record an ADR in the same PR (AGENTS.md: \"Keep docs short and current\")."
 fi
 
-if [ -n "$deps" ] && ! echo "$changed" | grep -qE '^docs/decisions/'; then
-  echo "Reminder: dependency/config files changed but no new ADR was added. A stack or tooling decision usually deserves one (docs/decisions/README.md has the template)."
+# A reminder that fires on every lockfile bump gets ignored; ask for the check that matters instead.
+if [ -n "$deps" ]; then
+  echo "Reminder: dependency/config files changed. Run the audit (npm audit --audit-level=high / pip-audit) and state the result; an accepted vulnerability needs a written reason. A new library or tool is an ADR."
 fi
 
 exit 0

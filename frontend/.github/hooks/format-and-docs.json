@@ -2,10 +2,10 @@
   "version": 1,
   "hooks": {
     "postToolUse": [
-      { "type": "command", "bash": ".claude/hooks/format-changed.sh", "cwd": ".", "timeoutSec": 60 }
+      { "type": "command", "bash": "h=.claude/hooks/format-changed.sh; [ -x \"$h\" ] && exec \"$h\"; cat >/dev/null", "cwd": ".", "timeoutSec": 60 }
     ],
     "agentStop": [
-      { "type": "command", "bash": ".claude/hooks/remind-docs.sh", "cwd": ".", "timeoutSec": 30 }
+      { "type": "command", "bash": "h=.claude/hooks/remind-docs.sh; [ -x \"$h\" ] && exec \"$h\"; cat >/dev/null", "cwd": ".", "timeoutSec": 30 }
     ]
   }
 }

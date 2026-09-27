@@ -21,8 +21,8 @@
       "Bash(npx lint-staged:*)",
       "Read(default.ini)",
       "Edit(default.ini)",
-      "Read(.env.example)",
-      "Edit(.env.example)"
+      "Read(env.example)",
+      "Edit(env.example)"
     ],
     "ask": [
       "Bash(curl:*)",
@@ -30,12 +30,9 @@
     ],
     "deny": [
       "Read(.env)",
-      "Read(.env.local)",
-      "Read(.env.*.local)",
-      "Read(.env.development)",
-      "Read(.env.production)",
-      "Read(.env.staging)",
-      "Read(.env.test)",
+      "Read(.env.*)",
+      "Edit(.env)",
+      "Edit(.env.*)",
       "Read(**/*.pem)",
       "Read(**/*.key)",
       "Read(**/*.p12)",
@@ -49,20 +46,16 @@
       "Read(~/.aws/**)",
       "Read(~/.config/gcloud/**)",
       "Read(~/.kube/config)",
-      "Edit(.env)",
-      "Edit(.env.local)",
-      "Edit(.env.*.local)",
-      "Edit(.env.development)",
-      "Edit(.env.production)",
-      "Edit(.env.staging)",
-      "Edit(.env.test)",
       "Edit(config/**)",
       "Edit(secrets/**)",
       "Bash(rm -rf:*)",
       "Bash(git push --force:*)",
       "Bash(git push -f:*)",
       "Bash(gh pr merge:*)",
-      "Bash(git reset --hard:*)"
+      "Bash(git reset --hard:*)",
+      "Edit(.claude/hooks/**)",
+      "Edit(.claude/settings.json)",
+      "Edit(.github/hooks/**)"
     ]
   },
   "hooks": {

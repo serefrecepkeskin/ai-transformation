@@ -145,7 +145,7 @@ farkı gösterir. Bir ajanı düzenleyince `python3 sync-copilot-agents.py backe
 
 **Downstream:** [virahr agent-kit](https://github.com/hraigit/agent-kit) bu şablondan türedi —
 kopyalamak yerine symlink'le dağıtır, `agent-work/` commit'lenmez, PR açmadan önce review kanıtı arayan bir kapısı
-var. Oradan geri gelen basit dersler: `fix/lessons-from-vira`.
+var.
 
 ## Lint kapısı — projede yoksa nasıl geliyor
 

@@ -17,7 +17,6 @@
   "chat.tools.terminal.autoApprove": {
     // the dev loop — safe to run unattended
     "/^git (status|diff|log|show|branch)\\b/": true,
-    "git add": true,
     "/^npm run (lint|test|typecheck|format:check|build)\\b/": true,
     "/^npx (prettier|eslint|tsc|vitest|playwright)\\b/": true,
     "/^npx (lint-staged|husky)\\b/": true,

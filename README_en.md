@@ -149,7 +149,7 @@ back under `frontend/` (ADR 0002).
 
 **Downstream:** [virahr agent-kit](https://github.com/hraigit/agent-kit) derives from this template —
 it distributes by symlink instead of copying, never commits `agent-work/`, and has a gate that asks for review
-evidence before a PR. The simple lessons it sent back: `fix/lessons-from-vira`.
+evidence before a PR.
 
 ## The lint gate — how it arrives in a repo that has none
 
